@@ -13,11 +13,12 @@ TARGET8 = control
 D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
 	PrinterTest.o ModemTest.o GprsTest.o EthernetTest.o CardReaderTest.o \
 	PinpadTest.o JingZhenTest.o Function.o OtherTest.o IdentifyReader.o	\
-	unicode.o Sms.o FM17XX.o ReadCardNo.o Epp.o WifiTest.o ProcCard.o
+	unicode.o Sms.o FM17XX.o ReadCardNo.o Epp.o WifiTest.o ProcCard.o \
+        md5.o xmlparser.o https.o aliqr.o statement.o qrgenerator.o
 #PSE.o
 	
 	$(CC) $^ -o $@ -L ../lib -l$(TARGET1) -l$(TARGET2) \
--l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm
+-l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm -lcurl -lexpat -pthread
 	
 	chmod +x D620D_test
 	mv ./D620D_test ./D620D/D620D
@@ -27,7 +28,7 @@ D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
 	rm -f *.o *bak
 
 %.o:%.c
-	$(CC) $(CFLAGS) -c -Wall $< -o $@
+	$(CC) $(CFLAGS) -DALIPAY_JIUYI -c -Wall $< -o $@
 
 clean:
 	rm -f *.o *bak

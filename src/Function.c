@@ -1,6 +1,7 @@
 #include "Main.h"
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include "qrgenerator.h"
 
 
 void UpdateTms()
@@ -96,7 +97,8 @@ int OtherFunc()
 				UpdateAppFromU();
 				break;
 			case 3:
-				SMS_Demo();
+				//SMS_Demo();
+                                generator_qrcode_to_bmp(1,"1.00"); 
 				break;
 
 		}
