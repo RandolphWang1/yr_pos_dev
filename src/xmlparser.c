@@ -28,6 +28,7 @@
  *
  */
 
+#include "Main.h"
 #include "xmlparser.h"
 #include "aliqr.h"
 char stqrcode[QRRESULTSTR]={0};
@@ -134,6 +135,21 @@ void endElement3(void *userData, const XML_Char *name)
     }
 }
 
+void endElementPrint(void *userData, const XML_Char *name)
+{
+    struct ParserStruct *state = (struct ParserStruct *) userData;
+    char PrintBuff[100] = {0};
+    state->depth--;
+    if(strcmp(name,"size") == 0){
+            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+        SetPrintFont(atoi(state->characters.memory));    
+    } else if(strcmp(name,"front") != 0) {
+            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+        memcpy(PrintBuff,state->characters.memory,state->characters.size);
+        FillPrintBuff(PrintBuff);
+    }
+    
+}
 size_t parseStreamCallback(void *contents, size_t length, size_t nmemb, void *userp)
 {
   XML_Parser parser = (XML_Parser) userp;

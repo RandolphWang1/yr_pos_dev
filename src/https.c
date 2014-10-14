@@ -131,3 +131,51 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
 
   return 0;
 }
+
+
+int parseXML(char* filename)
+{
+    char buf[BUFSIZ];
+    XML_Parser parser;
+    struct ParserStruct state;
+    int done = 0;
+    int len = 0;
+    int error_code;
+    FILE *fp = fopen(filename, "rt");
+    /* Initialize the state structure for parsing. */
+    memset(&state, 0, sizeof(struct ParserStruct));
+    state.ok = 1;
+    if(!fp) {
+        printf("open xml file error\n");
+        return 1;
+    }
+    /* Initialize a namespace-aware parser. */
+    parser = XML_ParserCreateNS(NULL, '\0');
+    XML_SetUserData(parser, &state);
+    XML_SetElementHandler(parser, startElement, endElementPrint);
+    XML_SetCharacterDataHandler(parser, characterDataHandler);
+    do {
+        len = (int)fread(buf,1,sizeof(buf),fp);
+        if(len > 0) {
+            if (XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR) {
+                error_code = XML_GetErrorCode(parser);
+                fprintf(stderr, "Finalizing parsing failed with error code %d (%s).\n",
+                        error_code, XML_ErrorString(error_code));
+                goto error;
+            }
+            else {
+                printf("                     %lu tags total\n", state.tags);
+            }
+        } else {
+            break;
+        }
+    }while(!done);
+    /* Clean up. */
+error:
+    free(state.characters.memory);
+    XML_ParserFree(parser);
+    /* always cleanup */
+    fclose(fp);
+
+    return 0;
+}

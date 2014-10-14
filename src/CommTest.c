@@ -17,6 +17,7 @@ void querySingle(void);
 void *thr_fn(void* arg);
 void printTail(char* price);
 char* Moneyformat(char* buf);
+char* serial2date(char* serialNo);
 unsigned int Money2int(char* buf);
 void print_logo();
 void query24h(void);
@@ -730,7 +731,7 @@ normal:
 }
 #endif
         printf("go before SetCommParam WaitLimitKey\n");
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x12", 5, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x06\x12", 5, 0);
         printf("go after SetCommParam WaitLimitKey\n");
         memset(sKeyName, 0, sizeof(sKeyName));
         GetKeyName(ucKey, sKeyName);
@@ -757,6 +758,7 @@ normal:
 				break;
 #endif
             case KEY_1:
+                //this part should think about more
                 if (system("ifconfig eth0") != 0) 
                     if (system("ifconfig ppp0") != 0) {
                         Clear(); 
@@ -851,6 +853,9 @@ normal:
                 break;
 			case KEY_4:
 				SetCDMA();
+				break;	
+			case KEY_6:
+				JingZhenTest();
 				break;	
             case KEY_5:
                 while(1)
@@ -984,15 +989,19 @@ int SetMoney()
     printf("\nafter:%s\n", buff);
     pthread_mutex_lock(&prmutex);
     print_logo();
-    generator_qrcode_to_bmp(1,buff);
-	system(buff);	 
+    ret = generator_qrcode_to_bmp(1,buff);
+	//system(buff);	 
 
     OkBeep();
     Clear();
     SetScrFont(FONT20, WHITE);
-    //TextOut(2, 4, ALIGN_CENTER, "input money OK!");
-    TextOut(2, 4, ALIGN_CENTER, "稍等，正在输出二维码...");
-    printTail(buff);
+    if(ret == 1)
+        TextOut(2, 4, ALIGN_CENTER, "链接支付宝失败，请检查网络");
+    else {
+        //TextOut(2, 4, ALIGN_CENTER, "input money OK!");
+        TextOut(2, 4, ALIGN_CENTER, "稍等，正在输出二维码...");
+        printTail(buff);
+    }
     pthread_mutex_unlock(&prmutex);
     WaitKey(1000);
     return OK;
@@ -1034,12 +1043,22 @@ char* Moneyformat(char* buf)
 
 unsigned int Money2int(char* buf)
 {
-    char fee[16] = {0};
+    char fee[18] = {0};
     int len = strlen(buf);
     int feeint = 0;
-    memcpy(fee,buf,len-3);  
-    memcpy(fee+len-3,buf+len-2,2);
-
+    printf("Money2int buf:%s, strlen(buf):%d\n", buf, len);
+    if(buf[len-3] == '.'){ //for these have fen like 1.01 or 0.01
+        memcpy(fee,buf,len-3);  
+        memcpy(fee+len-3,buf+len-2,2);
+    } else if(buf[len-2] == '.'){ //for these have jiao like 1.1 or 0.1
+        memcpy(fee,buf,len-2);  
+        fee[len-2] = buf[len-1];
+        fee[len-1] = '0';     //for we must make 1.1 to 110
+    } else {
+        memcpy(fee,buf,len);
+        fee[len] = '0';   
+        fee[len + 1]  = '0';  
+    }
     feeint = (unsigned int)atoi(fee);
     printf("Money2int fee:%s, feeint:%d\n", fee, feeint);
     return feeint;
@@ -1068,8 +1087,15 @@ START_PRINT:
     PrintEmptyLine(1);
     SetPrintIndent(0);
     SetPrintFont(32);
-    strcpy(printBuff,"盈润捷通     金额:");
+    strcpy(printBuff,"您本次消费金额: ");
     strcat(printBuff,price);
+    FillPrintBuff(printBuff);
+    PrintEmptyLine(1);
+    SetPrintFont(24);
+    strcpy(printBuff," 本产品由盈润捷通提供技术支持");
+    FillPrintBuff(printBuff);
+    SetPrintFont(24);
+    strcpy(printBuff,"     联系电话：4008190900");
     FillPrintBuff(printBuff);
     PrintEmptyLine(2);
 
@@ -1119,7 +1145,10 @@ START_PRINT:
         goto end1;
     }
     ClearPrintBuff();
+
     PrintEmptyLine(2);
+#if 1
+#if 1
     memset(PrintBuff,0,sizeof(PrintBuff));
     SetPrintIndent(0);
     SetPrintFont(48);
@@ -1133,13 +1162,27 @@ START_PRINT:
     FillPrintBuff(PrintBuff);
     strcpy(PrintBuff,"      订餐电话：58257262");
     FillPrintBuff(PrintBuff);
+    
+#else
+    strcpy(PrintBuff,"  北三环东路36号环贸中心D栋1层");
+    printf("PrintBuff:%d,北三环东路36号环贸中心D栋1层:%d",strlen(PrintBuff), strlen("北三环东路36号环贸中心D栋1层"));
+    parseXML("/usr/local/logo.xml");
+#endif
     strcpy(PrintBuff,"-----------------------------------");
     FillPrintBuff(PrintBuff);
     PrintEmptyLine(2);
     SetPrintFont(32);
     strcpy(PrintBuff,"    支付宝钱包支付");
     FillPrintBuff(PrintBuff);
- 
+#else
+    SetPrintFont(32);
+    strcpy(PrintBuff,"     支付宝合约商户");
+    FillPrintBuff(PrintBuff);
+    strcpy(PrintBuff,"   引领手机支付新潮流");
+    FillPrintBuff(PrintBuff);
+    strcpy(PrintBuff,"-----------------------------------");
+    FillPrintBuff(PrintBuff);
+#endif
 
 
 
@@ -1535,6 +1578,7 @@ void query24h(void)
     trade_num = SplitStr(result24h,trade_ptr,"|");
 
     pthread_mutex_lock(&prmutex);
+START_PRINT:
     if(CheckPrinter() != TRUE) {
         printf("the printer is not working well!\n");
         pthread_mutex_unlock(&prmutex);
@@ -1547,6 +1591,7 @@ void query24h(void)
 
 #ifdef ALIPAY_GOLDENLAKE
     strcpy(PrintBuff,"北京金湖餐饮有限公司金湖环贸店");
+ //   strcpy(PrintBuff,"查询近24小时成功交易");
 #endif
 #ifdef ALIPAY_JIUYI
     strcpy(PrintBuff,"北京九亿升辉餐饮管理有限公司");
@@ -1568,7 +1613,12 @@ void query24h(void)
     ret = StartPrint();
     DebugOut("print error code:[%d]\n", ret);
     if(ret != 0) {   
-        goto end1;
+        if(ret == -1)
+            goto START_PRINT;
+        else if(ret == -2)
+            goto end2;
+        else if(ret == -3)
+            goto end1;
     }
     ClearPrintBuff();
     memset(PrintBuff,0,sizeof(PrintBuff));
@@ -1591,6 +1641,9 @@ void query24h(void)
         total24h_fee += Money2int(trade_detail[3]);
 
         printf("total24h_fee:%d", total24h_fee);
+        strcpy(PrintBuff,"时间：");
+        strcat(PrintBuff, serial2date(pos_receipt.serial_number));
+        FillPrintBuff(PrintBuff);	   
         strcpy(PrintBuff,"序列号：");
         strcat(PrintBuff, pos_receipt.serial_number);
         FillPrintBuff(PrintBuff);	   
@@ -1610,7 +1663,12 @@ void query24h(void)
             ret = StartPrint();
             DebugOut("print error code:[%d]\n", ret);
             if(ret != 0) {   
-                goto end1;
+                if(ret == -1) 
+                    goto START_PRINT;
+                else if(ret == -2)
+                    goto end2;
+                else if(ret == -3)
+                    goto end1;
             }
             ClearPrintBuff();
             memset(PrintBuff,0,sizeof(PrintBuff));
@@ -1623,8 +1681,14 @@ void query24h(void)
     FillPrintBuff(PrintBuff);
     ret = StartPrint();
     DebugOut("print error code:[%d]\n", ret);
+    printf("print error code:[%d]\n", ret);
     if(ret != 0) {   
-        goto end1;
+        if(ret == -1)
+            goto START_PRINT;
+        else if(ret == -2)
+             goto end2;
+        else if(ret == -3)
+             goto end1;
     }
     ClearPrintBuff();
     memset(PrintBuff,0,sizeof(PrintBuff));
@@ -1650,7 +1714,7 @@ void query24h(void)
     if(ret != 0) 
     {
         if(ret == -1)
-             goto end1;
+            goto START_PRINT;
         else if(ret == -2)
              goto end2;
         else if(ret == -3)
@@ -1676,6 +1740,27 @@ end2:
         return ERROR;
 
 normal:
+}
+
+static char Defualtdata[] = "yy-mm-dd/hh:mm";
+char* serial2date(char* serialNo)
+{
+    char* ret = &Defualtdata[0];
+    Defualtdata[0] = serialNo[5];
+    Defualtdata[1] = serialNo[6];
+
+    Defualtdata[3] = serialNo[7];
+    Defualtdata[4] = serialNo[8];
+
+    Defualtdata[6] = serialNo[9];
+    Defualtdata[7] = serialNo[10];
+
+    Defualtdata[9] = serialNo[11];
+    Defualtdata[10] = serialNo[12];
+
+    Defualtdata[12] = serialNo[13];
+    Defualtdata[13] = serialNo[14];
+    return ret;
 }
 
 
