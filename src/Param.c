@@ -24,9 +24,9 @@ void InitTerm()
 
 	strcpy(gTerm.tEthernet.szServerIP, "192.168.8.180");
 	strcpy(gTerm.tEthernet.szServerPort, "8181");
-	strcpy(gTerm.tEthernet.szLocalIP, "192.168.8.199");
+	strcpy(gTerm.tEthernet.szLocalIP, "192.168.1.168");
 	strcpy(gTerm.tEthernet.szMask, "255.255.255.0");
-	strcpy(gTerm.tEthernet.szGateway, "192.168.8.1");
+	strcpy(gTerm.tEthernet.szGateway, "192.168.1.1");
 
 	strcpy(gTerm.szGprsServerIP, "124.205.159.130");
 	strcpy(gTerm.szGprsServerPort, "7979");

@@ -26,32 +26,38 @@ int  generator_qrcode_to_bmp(int out, char* price)
     char ticket_number[13]={0};
     char client_number[21]={0};
 
+    client_number[0] = '1';//to avoid 0 atoi bug
+    getIMSIconfig();
+    strcpy(qrpay_info.order_key,"11");
+    /* Time for D620D Pos */
+    GetDateTime(&tTime);
+    //if(query_number == 0) { //if query_number != 0 then time will nto changed, bug
+        sprintf(ticket_number,"%s%s%s%s%s00",tTime.year,tTime.month,tTime.day,tTime.hour,tTime.minute);
+        /* use last 4-bit of IMSI */
+        strncpy(client_number+1, &(qrpay_info.imsi[11]), 5);
+        strcat(client_number, ticket_number);
+        query_number = (unsigned long long)atoll(client_number);
+    if(old_query_number == query_number/100 ) {
+        query_number = query_number + query_number_idx;
+        query_number_idx++;
+    } else {
+        query_number_idx = 1;
+        old_query_number = query_number/100; 
+    }
+    //}
 
-getIMSIconfig();
-strcpy(qrpay_info.order_key,"11");
-/* Time for D620D Pos */
-GetDateTime(&tTime);
-if(query_number == 0) {
-   sprintf(ticket_number,"%s%s%s%s%s00",tTime.year,tTime.month,tTime.day,tTime.hour,tTime.minute);
-   /* use last 6-bit of IMSI */
-   strncpy(client_number, &(qrpay_info.imsi[9]), 6);
-   strcat(client_number, ticket_number);
-   query_number = (unsigned long long)atoll(client_number);
-}
 
-
-query_number = query_number + 1;
-qrpay_info.order_number = query_number;
-strcpy(qrpay_info.total_fee,price);
-//strcpy(qrpay_info.total_fee,"0.01");^M
-//strcpy(qrpay_info.order_subject,"ccc");
-strcpy(qrpay_info.order_subject,"ALIPAY");
-strcpy(qrpay_info.order_time,"2014-08-0514:15:30");
+    qrpay_info.order_number = query_number;
+    strcpy(qrpay_info.total_fee,price);
+    //strcpy(qrpay_info.total_fee,"0.01");^M
+    //strcpy(qrpay_info.order_subject,"ccc");
+    strcpy(qrpay_info.order_subject,"GoldenLakeCafe");
+    strcpy(qrpay_info.order_time,"2014-08-0514:15:30");
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
     /* print the qr code from alipay */
     alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_PRECREATE_ORDER);
     szSourceString = szQrcodeString;
-    if(szQrcodeString) {
+    if(szQrcodeString[0] != '\0') {
         /* print QR code on D620D */
         //ret = PrintQR(10, 1, 2, szSourceString, 5, 5);
         //ret = PrintQR(6, 1, 2, szSourceString, 5, 7);
@@ -60,8 +66,10 @@ strcpy(qrpay_info.order_time,"2014-08-0514:15:30");
         {
             printf("the PrintQR return value is %d\n",ret);
         }
+    } else {
+        ret = 1;
     }
-    return 0;
+    return ret;
 }
 
 //user don't need to input imsi and year month date, but hour,minutes,and serial no is needed,
@@ -74,10 +82,11 @@ void getSNoPre(char* prefix_str)
     GetDateTime(&tTime);
     memset(ticket_number, 0, 13);
     memset(client_number, 0, 21);
+    client_number[0] = '1'; //to avoid atoi bug
     sprintf(ticket_number,"%s%s%s\0",
             tTime.year, tTime.month, tTime.day);
-    /* use last 6-bit of IMSI */
-    strncpy(client_number, &(qrpay_info.imsi[10]), 6);
+    /* use last 4-bit of IMSI */
+    strncpy(client_number+1, &(qrpay_info.imsi[11]), 5);
     strcat(client_number, ticket_number);
     memcpy(prefix_str, client_number,strlen(client_number));
     printf("ticket_number:%s, client_number:%s, prefix:%s\n",
