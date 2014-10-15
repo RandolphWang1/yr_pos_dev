@@ -497,7 +497,8 @@ START_QUECTEL_GPRS_INIT:
 
 #endif
 	//Æô¶¯×´Ì¬À¸
-	CreateStatusBar(WHITE);
+	//CreateStatusBar(WHITE);
+	CreateStatusBar_YRJT(WHITE);
 	OpenStatusBar();
 
 FUNC:

@@ -102,6 +102,8 @@ int WriteUart(int iHandle,unsigned char * pucInData,unsigned short uiInLen);
  */
 int CreateStatusBar(int font_color);
 
+int CreateStatusBar_YRJT(int font_color);
+
 /*
  * function	:	Æô¶¯×´Ì¬À¸
  * param1	:	
