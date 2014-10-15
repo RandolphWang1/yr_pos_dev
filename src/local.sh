@@ -17,8 +17,28 @@ insmod icc.o
 insmod kbd.o
 insmod control.o
 
-ifconfig lo 127.0.0.1 up
-./srv&
+mkdir /etc/var
+mkdir /etc/var/lock
+mkdir /etc/var/run
+mkdir /etc/var/log
 
-cd ../D620D
-./D620D
+cd /usr/local/
+
+if [ -f ppp.tar.gz ]; then
+	tar xzvf ppp.tar.gz
+	chmod a+x ./ppp_tar/ppp_update.sh
+	./ppp_tar/ppp_update.sh
+	rm ppp.tar.gz
+fi
+
+syslogd 
+
+/etc/ppp/pppd call gprs&
+
+ifconfig lo 127.0.0.1 up
+
+/usr/local/query_server.out&
+#./srv&
+
+cd D620D
+./D620D &
