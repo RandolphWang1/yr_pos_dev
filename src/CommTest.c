@@ -514,33 +514,6 @@ void SetCommParam()
 	UCHAR ucKey;
 	char sKeyName[20];
 	int ret;
-#if 0 //def ALIPAY_QUERY
-    fd_set rset;
-    struct timeval tv;
-    int retval;
-    int i;
-#endif
-#if 0 //def ALIPAY_QUERY
-    int connection_fd;
-    socklen_t address_length;
-    int nbytes; 
-    char buffer[1024];
-    int trade_num;
-    char *trade_ptr[100] = {NULL}; 
-    char *trade_detail[5] = {NULL}; 
-    struct receipt_info pos_receipt;
-    char PrintBuff[30];
-	T_DATETIME tTime;
-	char pos_date[12];
-	char pos_time[12];
-#endif
-
-#if 0 //def ALIPAY_QUERY
-    int maxfd = 0;
-    if(socket_fd != 0)
-        maxfd = max(maxfd,socket_fd);
-#endif
-
     int err;
     pthread_t ntid;
     pthread_mutex_init(&prmutex, NULL);
@@ -551,11 +524,6 @@ void SetCommParam()
     printf("---------SetCommParam() outside the while loop----\n");
     while(1)
     {
-#if 0 //def ALIPAY_QUERY
-        FD_ZERO(&rset);
-        FD_SET(socket_fd, &rset);
-        address_length = sizeof(address);
-#endif
 		Clear();
 
         printf("---------SetCommParam() inside the while loop----\n");
@@ -566,14 +534,6 @@ void SetCommParam()
 		//ShowBmpFile(0, 25, "pic/title.bmp");
 		//TextOutByPixel(95, 30, "盈润捷通");
 		TextOutByPixel(115, 30, "盈润捷通");
-#if 0
-		//菜单
-		ShowBmpFile(90, 60, "pic/button.bmp");
-		TextOutByPixel(105, 65, "1.拨号");
-
-		ShowBmpFile(90, 95, "pic/button.bmp");
-		TextOutByPixel(105, 100, "2.G网");
-#endif
 
         ShowBmpFile(90, 75, "pic/button.bmp");
         TextOutByPixel(105, 80, "0.关机");
@@ -586,150 +546,7 @@ void SetCommParam()
 
         ShowBmpFile(90, 180, "pic/button.bmp");
         TextOutByPixel(105, 185, "3.日结");
-#if 0
-        ShowBmpFile(90, 165, "pic/button.bmp");
-		TextOutByPixel(105, 170, "4.C网");
-		
-        ShowBmpFile(90, 200, "pic/button.bmp");
-        TextOutByPixel(105, 205, "5.wifi网");
-#endif
 
-#if 0 //def ALIPAY_QUERY
-        /* Wait up to one seconds. */
-        tv.tv_sec = 1;
-        tv.tv_usec = 0; 
-        retval = select(maxfd+1, &rset, NULL, NULL, &tv);
-        //retval = select(maxfd+1, &rset, NULL, NULL, NULL);
-        printf("select got return,go before FD_ISSET-----\n");
-        if(FD_ISSET(socket_fd, &rset)) {
-            if ((connection_fd = accept(socket_fd,
-                            (struct sockaddr *) &address,
-                            &address_length)) > -1)
-            {
-
-    nbytes = read(connection_fd, buffer, 1024);
-    buffer[nbytes] = 0;
-
-    printf("MESSAGE FROM ALIPAY: %s\n", buffer);
-    //nbytes = snprintf(buffer, 256, "hello from the server");
-    //write(connection_fd, buffer, nbytes);
-    /* start print out the payment query result */
-
-    trade_num = SplitStr(buffer,trade_ptr,"|");
-
-    //write(tty_data.posfd,alipay_receipt,sizeof(alipay_receipt));
-    ///write(tty_data.posfd,"\n",1);
-	/* get system time */
-	//time(&td);
-	//ptr = localtime(&td);
-	//strftime(pos_date,sizeof(pos_date),"%Y-%m-%d",ptr);
-	//strftime(pos_time,sizeof(pos_time),"%H:%M:%S",ptr);
-        GetDateTime(&tTime);
-        sprintf(pos_date,"%s%s-%s-%s",tTime.century,tTime.year,tTime.month,tTime.day);
-        sprintf(pos_time,"%s:%s:%s",tTime.hour,tTime.minute,tTime.second);
-	
-    for (i=0; i<trade_num; i++){
-       printf("number %d trade:%s\n",i,trade_ptr[i]);
-       SplitStr(trade_ptr[i],trade_detail,",");
-       memset(pos_receipt.serial_number,0,24);
-       memset(pos_receipt.out_trade_no,0,16);
-       memset(pos_receipt.trade_no,0,32);
-       memset(pos_receipt.total_fee,0,16);
-
-       strcpy(pos_receipt.serial_number,trade_detail[0]);
-       strcpy(pos_receipt.out_trade_no,trade_detail[1]);
-       strcpy(pos_receipt.trade_no,trade_detail[2]);
-       strcpy(pos_receipt.total_fee,trade_detail[3]);
-       ///WritePayment(1, &pos_receipt);
-      /// write(tty_data.posfd,"\n",1);
-       ///write(tty_data.posfd,"\n",1);
-START_PRINT:
-       if(CheckPrinter() != TRUE)
-           printf("the printer is not working well!\n");
-       ClearPrintBuff();
-       memset(PrintBuff,0,30);
-       SetPrintIndent(100);
-       SetPrintFont(32);
-       strcpy(PrintBuff,"支付宝交易凭条");
-       FillPrintBuff(PrintBuff);
-	   PrintEmptyLine(2);
-	   SetPrintIndent(0);
-       SetPrintFont(32);
-       strcpy(PrintBuff,"序列号：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_receipt.serial_number);
-	
-       strcpy(PrintBuff,"小票号：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_receipt.out_trade_no);
-	
-       strcpy(PrintBuff,"日期：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_date);
-	   
-       strcpy(PrintBuff,"时间：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_time);
-	   
-       strcpy(PrintBuff,"-------------------");
-       FillPrintBuff(PrintBuff);	   
-
-       strcpy(PrintBuff,"支付宝当面付");
-       FillPrintBuff(PrintBuff);	   
-
-       strcpy(PrintBuff,"交易号：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_receipt.trade_no);
-	   
-       strcpy(PrintBuff,"金额：");
-       FillPrintBuff(PrintBuff);
-       FillPrintBuff(pos_receipt.total_fee);
-	   
-       strcpy(PrintBuff,"签名 ");
-       FillPrintBuff(PrintBuff);
-	   
-       strcpy(PrintBuff,"本人同意上述交易");
-       FillPrintBuff(PrintBuff);
-
-       PrintEmptyLine(3);	 
-	     	   	   	   	   
-       //开始打印    
-        ret =StartPrint();
-        DebugOut("print error code:[%d]\n", ret);
-        if(ret != 0)
-        {   
-            if(ret == -1) 
-                goto START_PRINT;
-            else if(ret == -2) 
-                goto end2;
-            else if(ret == -3) 
-                goto end1;
-        }   
-        goto normal;
-end1:  
-
-        FailBeep(); 
-        ClearLine(1, 9);
-        TextOut(0, 3, ALIGN_CENTER, "请检查打印机"); 
-        TextOut(0, 4, ALIGN_CENTER, "打印失败");
-        WaitKey(2000);
-
-
-        goto normal;
-end2:  
-
-        FailBeep(); 
-        ClearLine(1, 9);
-        TextOut(0, 3, ALIGN_CENTER, "电量不足"); 
-        TextOut(0, 4, ALIGN_CENTER, "无法执行打印");
-        WaitKey(2000);
-
-normal:
-    }
-    close(connection_fd);
-    }
-}
-#endif
         printf("go before SetCommParam WaitLimitKey\n");
         ucKey = WaitLimitKey("\x00\x01\x02\x03\x06\x12", 5, 0);
         printf("go after SetCommParam WaitLimitKey\n");
@@ -749,14 +566,6 @@ normal:
                                if(WaitKey(0) == KEY_1)
                                            ShutDown(); 
                                break;
-#if 0
-			case KEY_1:
-				SetModem();
-				break;
-			case KEY_2:
-				SetGPRS();
-				break;
-#endif
             case KEY_1:
                 //this part should think about more
                 if (system("ifconfig eth0") != 0) 
@@ -770,13 +579,6 @@ normal:
                 //TextOut(0, 0, ALIGN_CENTER, "IP 获取方式");
                 TextOut(0, 0, ALIGN_CENTER, "欢迎使用支付宝钱包支付");
 
-#if 0
-				TextOut(0, 4, ALIGN_LEFT, "  1.自动获取IP");
-				TextOut(0, 5, ALIGN_LEFT, "  2.固定设置IP");
-				TextOut(0, 6, ALIGN_LEFT, "  3.查看当前ip设置");
-				TextOut(0, 7, ALIGN_LEFT, "  4.移动支付");
-				ucKey = WaitLimitKey("\x12\x01\x02\x03\x04", 5, 0);
-#endif
 				TextOut(0, 4, ALIGN_CENTER, "请按OK键输入金额");
 				TextOut(0, 5, ALIGN_CENTER, "按CANCEL键或者BACK键返回");
 				ucKey = WaitLimitKey("\x12\x0E\x0F", 3, 0);
@@ -785,72 +587,13 @@ normal:
 				else if(ucKey == KEY_CANCEL || ucKey == KEY_BACKSPACE)
 					return ;
 				break;
-#if 0
-				if(ucKey == KEY_1)
-				{
-					gTerm.bAutoIP = TRUE;
-					if(WriteData("test-term.dat", &gTerm, sizeof(T_TERM), 0) == FALSE)
-					{
-						Clear();                      
-						SetScrFont(FONT20, WHITE);
-						TextOut(0, 3, ALIGN_CENTER, "保存文件出错"); 
-						TextOut(0, 4, ALIGN_CENTER, "请稍后重试"); 
-						FailBeep();
-						WaitKey(2000);
-				    	//goto FAILED;
-					}
-					Clear();;
-					SetScrFont(FONT20, WHITE);
-					TextOut(0, 2, ALIGN_CENTER, "主机IP");
-					TextOut(0, 8, ALIGN_CENTER, "保持不变请按确认键");
-					SetScrFont(FONT20, RED);
-					if(InputIP(8, 5, gTerm.tEthernet.szServerIP) != OK)
-						return ;
-					
-					Clear();;
-					SetScrFont(FONT20, WHITE);
-					TextOut(0, 3, ALIGN_CENTER, "主机端口");
-					TextOut(0, 8, ALIGN_CENTER, "保持不变请按确认键");
-					SetScrFont(FONT20, RED);
-					ret = Input(7, 5, gTerm.tEthernet.szServerPort, 5, IME_NUMBER, BLACK, GREEN, FALSE, FALSE, FALSE);
-					if(ret != OK)
-						return ;
-
-					
-					system("/usr/udhcp/udhcpc");
-					Clear();
-					TextOut(0, 5, ALIGN_CENTER, "设置成功");
-					WaitKey(3000);
-				}
-				else if(ucKey == KEY_2)
-				{
-					gTerm.bAutoIP = FALSE;
-					if(WriteData("test-term.dat", &gTerm, sizeof(T_TERM), 0) == FALSE)
-					{
-						Clear();                      
-						SetScrFont(FONT20, WHITE);
-						TextOut(0, 3, ALIGN_CENTER, "保存文件出错"); 
-						TextOut(0, 4, ALIGN_CENTER, "请稍后重试"); 
-						FailBeep();
-						WaitKey(2000);
-				    	//goto FAILED;
-					}
-					SetEthernet();
-				}
-				else if(ucKey == KEY_3)
-					ViewIpSet();
-				else if(ucKey == KEY_4)
-					SetMoney();
-				else if(ucKey == KEY_CANCEL)
-					return ;
-				break;
-#endif
             case KEY_2:
                 querySingle();
                 break;	
             case KEY_3:
                 query24h();
                 break;
+               
 			case KEY_4:
 				SetCDMA();
 				break;	
@@ -880,18 +623,7 @@ normal:
                             break;
 				}
                 break;
-
 		}
-#ifdef ALIPAY_QUERY
-#if 0
-           if (retval == -1) {
-                printf("select function error!\n");
-                return ERROR;
-           } else {
-               continue;
-           }
-#endif
-#endif
 	}
 }
 
