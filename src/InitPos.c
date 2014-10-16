@@ -1,13 +1,46 @@
 #include "Main.h"
 
-void show_version()
+#include "yr_version.h"
+
+char *yrjt_ver=NULL;
+
+char *get_yrjt_ver(void)
+{
+	if(yrjt_ver == NULL)
+	{
+#if 0
+	//if the version has illegal charater, use this to filter it.
+	char *p = YRJT_VERSION;
+	char buf[100];
+	int i=0;
+	while(!(*p>='a' || *p<='z' || *p >='A' || *p<='Z' || *p>='0' || *p<='9'))
+		p++;
+
+		
+	while(*p>='a' || *p<='z' || *p >='A' || *p<='Z' || *p>='0' || *p<='9' || *p=='-' || *p=='_')
+		{
+		buf[i++]=*p++;
+		}
+
+	buf[i]='\0';
+
+	yrjt_ver = malloc(i);
+	memcpy(yrjt_ver,buf,i);
+#else	
+	yrjt_ver = YRJT_VERSION;
+#endif
+	}
+	return yrjt_ver;	
+}
+
+void show_version(void)
 {
     char buff[100];
 	memset(buff, 0, sizeof(buff));
 	GetSDKVersion(buff);
 	printf("SDK VERSION: [%s]\n", buff);
 	printf("APP VERSION: [%s]\n", APP_VERSION);
-    printf("YRJT VERSION: [%s]\n", YRJT_VERSION);    
+    printf("YRJT VERSION: [%s]\n", get_yrjt_ver());    
 }
 
 //对POS关键模块进行初始化检测
@@ -26,7 +59,7 @@ INT InitPOS(void)
 	GetSDKVersion(buff);
 	printf("SDK VERSION: [%s]\n", buff);
 	printf("APP VERSION: [%s]\n", APP_VERSION);
-    printf("YRJT VERSION: [%s]\n", YRJT_VERSION);
+    //printf("YRJT VERSION: [%s]\n", YRJT_VERSION);
     
 	SetScrFont(FONT20, WHITE);
 

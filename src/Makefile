@@ -16,14 +16,25 @@ BUILD_TIME = $(shell date "+%F_%R")
 
 YRJT_VERSION=$(BRANCH_NAME)_$(BUILD_TIME) 
 
-all : YRJT_OUT
+all:GEN_VEN_H YRJT_OUT
+
 D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
 	PrinterTest.o ModemTest.o GprsTest.o EthernetTest.o CardReaderTest.o \
 	PinpadTest.o JingZhenTest.o Function.o OtherTest.o IdentifyReader.o	\
 	unicode.o Sms.o FM17XX.o ReadCardNo.o Epp.o WifiTest.o ProcCard.o \
     md5.o xmlparser.o https.o aliqr.o statement.o qrgenerator.o
-	$(CC) $^ -o $@ -D$(YRJT_VERSION) -L ../lib -l$(TARGET1) -l$(TARGET2) -l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm -lcurl -lexpat -pthread 
+	$(CC) $^ -o $@ -L ../lib -l$(TARGET1) -l$(TARGET2) -l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm -lcurl -lexpat -pthread 
 
+GEN_VEN_H:
+	rm -f yr_version.h
+	@echo "#ifndef __YR_VER__" >> yr_version.h
+	@echo "#define __YR_VER__" >> yr_version.h
+	@echo -n "\\t#define YRJT_VERSION "  >> yr_version.h
+	@echo -n \" >> yr_version.h
+	@echo -n $(YRJT_VERSION) >> yr_version.h    
+	@echo -n \" >> yr_version.h
+	@echo >> yr_version.h
+	@echo "#endif" >> yr_version.h 
 
 YRJT_OUT:D620D_test
 	chmod +x D620D_test
