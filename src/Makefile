@@ -10,6 +10,11 @@ TARGET5 = kbd
 TARGET6 = magcard
 TARGET7 = armd8linux
 TARGET8 = control
+BRANCH_NAME = $(shell git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+BUILD_TIME = $(shell date "+%F_%R")
+
+
+YRJT_VERSION=$(BRANCH_NAME)_$(BUILD_TIME) 
 
 all : YRJT_OUT
 D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
@@ -17,7 +22,8 @@ D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
 	PinpadTest.o JingZhenTest.o Function.o OtherTest.o IdentifyReader.o	\
 	unicode.o Sms.o FM17XX.o ReadCardNo.o Epp.o WifiTest.o ProcCard.o \
     md5.o xmlparser.o https.o aliqr.o statement.o qrgenerator.o
-	$(CC) $^ -o $@ -L ../lib -l$(TARGET1) -l$(TARGET2) -l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm -lcurl -lexpat -pthread
+	$(CC) $^ -o $@ -D$(YRJT_VERSION) -L ../lib -l$(TARGET1) -l$(TARGET2) -l$(TARGET3)  -l$(TARGET4) -l$(TARGET5) -l$(TARGET6) -l$(TARGET7) -l$(TARGET8) -lm -lcurl -lexpat -pthread 
+
 
 YRJT_OUT:D620D_test
 	chmod +x D620D_test

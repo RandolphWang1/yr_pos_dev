@@ -1,5 +1,15 @@
 #include "Main.h"
 
+void show_version()
+{
+    char buff[100];
+	memset(buff, 0, sizeof(buff));
+	GetSDKVersion(buff);
+	printf("SDK VERSION: [%s]\n", buff);
+	printf("APP VERSION: [%s]\n", APP_VERSION);
+    printf("YRJT VERSION: [%s]\n", YRJT_VERSION);    
+}
+
 //对POS关键模块进行初始化检测
 INT InitPOS(void)
 {
@@ -16,7 +26,8 @@ INT InitPOS(void)
 	GetSDKVersion(buff);
 	printf("SDK VERSION: [%s]\n", buff);
 	printf("APP VERSION: [%s]\n", APP_VERSION);
-
+    printf("YRJT VERSION: [%s]\n", YRJT_VERSION);
+    
 	SetScrFont(FONT20, WHITE);
 
 	//初始化控制器
