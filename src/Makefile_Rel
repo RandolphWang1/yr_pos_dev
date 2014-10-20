@@ -29,7 +29,7 @@ D620D_test:InitPos.o Main.o Param.o CommTest.o KbdTest.o LcdTest.o \
 	rm -f *.o *bak
 
 %.o:%.c
-	$(CC) $(CFLAGS) -DALIPAY_JIUYI -c -Wall $< -o $@
+	$(CC) $(CFLAGS) -DRECEIPT_CONF -c -Wall $< -o $@
 
 clean:
 	rm -f *.o *bak

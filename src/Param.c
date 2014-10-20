@@ -9,6 +9,10 @@ T_TERM gTerm;
 
 T_SMS  gSMS;
 
+#ifdef RECEIPT_CONF
+T_RECEIPT gRCP;
+#endif
+
 void InitTerm()
 {
 	//初始化各变量
@@ -95,3 +99,28 @@ void InitSMS()
 
 
 
+#ifdef RECEIPT_CONF
+void InitReceipt()
+{
+       //初始化各变量
+       memset(&gRCP, 0, sizeof(T_RECEIPT));
+
+       memcpy(gRCP.rcp_title_line1,"   金湖茶餐厅",13);
+       memcpy(gRCP.rcp_title_line2,"     GL Cafe",12);
+       memcpy(gRCP.rcp_title_address,"  北三环东路36号环贸中心D栋1层",30);
+       memcpy(gRCP.rcp_title_number,"        订餐电话: 58257262",26);
+       memcpy(gRCP.rcp_title_company,"北京金湖餐饮有限公司金湖环贸店",30);
+
+	//保存
+	if(!WriteData("test-receipt.dat", (char *)(&gRCP), sizeof(T_RECEIPT), 0))
+	{
+		Clear();                      
+		SetScrFont(FONT24, RED);
+		TextOut(0, 2, ALIGN_CENTER, "机器硬件出错"); 
+		TextOut(0, 3, ALIGN_CENTER, "请更换设备");
+		FailBeep();					  
+		WaitKey(2000);
+		return;
+	}
+}
+#endif

@@ -252,6 +252,22 @@ INT InitPOS(void)
 		DebugOut("读取配置文件成功!\n");
 	}
 	
+#ifdef RECEIPT_CONF
+	memset(&gRCP, 0,sizeof(T_RECEIPT));
+	if(!ReadData("test-receipt.dat", &gRCP,sizeof(T_RECEIPT), 0))
+	{
+		TextOut(0, 8, ALIGN_LEFT, "    初始化配置文件..."); 
+		DebugOut("初始化配置文件...\n");
+		InitReceipt();
+		Wait(1000);
+		TextOut(0, 9, ALIGN_LEFT, "    初始化配置文件成功!"); 
+		DebugOut("初始化配置文件成功!\n");
+	}
+	else
+	{
+		DebugOut("读取配置文件成功!\n");
+	}
+#endif
 
 	if(gTerm.bAutoIP == TRUE)
 	{
@@ -289,7 +305,7 @@ INT InitPOS(void)
 		DebugOut("\n%s\n", szBuff);
 		system(szBuff);	 
 	}
-	TextOut(0, 8, ALIGN_CENTER, "以太网配置完成!");
+	//TextOut(0, 8, ALIGN_CENTER, "以太网配置完成!");
 
 
 	return OK;

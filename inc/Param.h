@@ -83,5 +83,21 @@ typedef struct
 extern T_SMS gSMS;
 void InitSMS();
 
+/*
+ *小票打印配置
+ */
+#ifdef RECEIPT_CONF
+typedef struct
+{
+       char rcp_title_line1[16+1];      // 小票标题第一行，汉字最多8个，数字，英文最多16个
+       char rcp_title_line2[16+1];      // 小票标题第二行，汉字最多8个，数字，英文最多16个
+       char rcp_title_address[32+1];    // 小票标题地址，汉字最多16个，数字，英文最多32个
+       char rcp_title_number[32+1];     // 小票标题电话，汉字最多16个，数字，英文最多32个
+       char rcp_title_company[32+1];    // 小票标题电话，汉字最多16个，数字，英文最多32个
+}T_RECEIPT;
+
+extern T_RECEIPT gRCP;
+void InitReceipt();
+#endif /*RECEIPT_CONF*/
 #endif
 

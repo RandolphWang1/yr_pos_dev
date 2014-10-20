@@ -54,7 +54,7 @@ Rel:D620D_test
 	rm -f *.o *bak	
 
 %.o:%.c
-	$(CC) $(CFLAGS) -DALIPAY_JIUYI -c -Wall $< -o $@
+	$(CC) $(CFLAGS) -DRECEIPT_CONF -c -Wall $< -o $@
 
 clean:
 	rm -f *.o *bak
