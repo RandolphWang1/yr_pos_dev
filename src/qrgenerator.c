@@ -51,7 +51,7 @@ int  generator_qrcode_to_bmp(int out, char* price)
     strcpy(qrpay_info.total_fee,price);
     //strcpy(qrpay_info.total_fee,"0.01");^M
     //strcpy(qrpay_info.order_subject,"ccc");
-    strcpy(qrpay_info.order_subject,"GoldenLakeCafe");
+    strcpy(qrpay_info.order_subject,"ALIPAY");
     strcpy(qrpay_info.order_time,"2014-08-0514:15:30");
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
     /* print the qr code from alipay */
