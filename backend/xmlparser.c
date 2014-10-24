@@ -30,6 +30,7 @@
 
 #include "xmlparser.h"
 #include "aliqr.h"
+#include <syslog.h>
 char stqrcode[QRLEN]={0};
 char timemark[32]={0};
 
@@ -92,13 +93,16 @@ void endElement2(void *userData, const XML_Char *name)
 {
   struct ParserStruct *state = (struct ParserStruct *) userData;
   state->depth--;
-  if( strcmp(name,"time_mark") == 0){
+  if( strcmp(name,"time_mark") == 0 && state->characters.size > 0){
       memcpy(timemark,state->characters.memory,state->characters.size);
-      printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+      //printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+      syslog(LOG_INFO,"%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
   }
   if( strcmp(name,"order") == 0){
       memcpy(stqrcode,state->characters.memory,state->characters.size);
-      printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+      //printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+      if(state->characters.size > 0)
+      syslog(LOG_INFO,"%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
   }
 }
 

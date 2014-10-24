@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 
 #if 0  //namie_liu's PID and Key alipay seller apk not work for face pay
 static char partner[17]= "2088002374756150";
@@ -180,7 +181,8 @@ int alipay_query(char* precr, int* len, char* str_imsi)
         *len = sprintf(encrypt,"IMSI=%s&time_mark=%s#%s", str_imsi, str_timemark, jfkey);
         else
         *len = sprintf(encrypt,"IMSI=%s&time_mark=%s#%s", str_imsi, time_mark, jfkey);
-        printf("\nMD5 input:encrypt=%s", encrypt);
+        //printf("\nMD5 input:encrypt=%s", encrypt);
+        syslog(LOG_INFO,"\nMD5 input:encrypt=%s", encrypt);
 
         md5_init(&state);
         md5_append(&state, (const md5_byte_t *)encrypt, strlen(encrypt));

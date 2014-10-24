@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include "aliqr.h"
+#include <syslog.h>
 
 
 struct payInfo qrpay_info;
@@ -27,7 +28,8 @@ void payment_alarm_handler(int sig) {
 #if 1
     if (time_mark[0] == '\0'){
        /* time_mark is missing, using random one to require a new one */
-       printf("query parameter: time_mark is missing!\n");
+       //printf("query parameter: time_mark is missing!\n");
+       syslog(LOG_WARNING,"query parameter: time_mark is missing!\n");
        //strcpy(qrpay_info.timemark,"1408001801550");
        //alipay_main(&payquery_result, &qrpay_info);
        alipay_main(&payquery_result, &qrpay_info, ALI_PRECREATE_QUERY);
