@@ -1,0 +1,6 @@
+#download
+/usr/local/curl -C 0 http://182.92.8.2:8080/qrcode/lastest/$SRV_PKG_NAME > $PKG_DEST_PATH
+#check
+/usr/local/md5sum -c --status $TMP_MD5_FILE
+#install
+mv $PKG_DEST_PATH /usr/local/D620D.tar.gz

@@ -13,6 +13,11 @@ int SetMoney();
 extern int socket_fd;
 extern struct sockaddr_un address;
 
+extern void showVersion(void);
+extern void Update_YRJT_Image(void);
+extern upload_debug_log(void);
+
+
 void querySingle(void);
 void *thr_fn(void* arg);
 void printTail(char* price);
@@ -549,9 +554,9 @@ void SetCommParam()
 
         printf("go before SetCommParam WaitLimitKey\n");
 #ifdef RECEIPT_CONF
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x12", 6, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x0a\x12", 7, 0);
 #else
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x12", 5, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x0a\x12", 6, 0);
 #endif
         printf("go after SetCommParam WaitLimitKey\n");
         memset(sKeyName, 0, sizeof(sKeyName));
@@ -631,6 +636,21 @@ void SetCommParam()
                             break;
 				}
                 break;
+            case KEY_F1:
+				Clear();	
+				TextOutByPixel(105, 60, "1.当前版本");
+				TextOutByPixel(105, 80, "2.远程升级");
+				TextOutByPixel(105, 100, "3.上传故障信息");
+	            ucKey = WaitLimitKey("\x01\x02\x03\x12", 4, 0);
+	            if ('\x01' == ucKey)
+					showVersion();
+				
+	            if ('\x02' == ucKey)
+					Update_YRJT_Image();
+			
+	            if ('\x03' == ucKey)
+					upload_debug_log();
+				break;
 		}
 	}
 }

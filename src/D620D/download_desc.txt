@@ -1,0 +1,1 @@
+/usr/local/curl -C 0 http://182.92.8.2:8080/qrcode/lastest/update.txt > $TMP_DESC_PATH
