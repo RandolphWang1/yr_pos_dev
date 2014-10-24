@@ -11,8 +11,8 @@ TARGET6 = magcard
 TARGET7 = armd8linux
 TARGET8 = control
 BRANCH_NAME = $(shell git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
-BUILD_TIME = $(shell date "+%F_%R" 2>/dev/null | sed -e 's/[^0-9_-:]//g')
-
+#BUILD_TIME = $(shell date "+%F_%R" 2>/dev/null | sed -e 's/[^0-9_-:]//g')
+BUILD_TIME = $(shell date "+%F" 2>/dev/null | sed -e 's/[^0-9_-:]//g')
 
 YRJT_VERSION=$(BRANCH_NAME)_$(BUILD_TIME) 
 #YRJT_VERSION=$(BUILD_TIME)_$(BRANCH_NAME) 
