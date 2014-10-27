@@ -33,6 +33,8 @@ void payment_alarm_handler(int sig) {
        //strcpy(qrpay_info.timemark,"1408001801550");
        //alipay_main(&payquery_result, &qrpay_info);
        alipay_main(&payquery_result, &qrpay_info, ALI_PRECREATE_QUERY);
+       if(payquery_result.time_mark[0] == '\0')
+           syslog(LOG_WARNING,"AT BEGINING,THE TIME_MARK is NULL!\n");
        strcpy(time_mark, payquery_result.time_mark);
        printf("query parameter: new time_mark is %s\n",time_mark);
        alarm(10);
@@ -47,7 +49,10 @@ void payment_alarm_handler(int sig) {
     //memset(payquery_result.time_mark,0,32);
     //alipay_main(&payquery_result, &qrpay_info);
     alipay_main(&payquery_result, &qrpay_info, ALI_PRECREATE_QUERY);
-    strcpy(time_mark, payquery_result.time_mark);
+    if( payquery_result.time_mark[0] != '\0') 
+       strcpy(time_mark, payquery_result.time_mark);
+    else
+       syslog(LOG_WARNING,"NO time_mark return from server!\n");
     if(payquery_result.qr_string[0]){
     struct sockaddr_un address;
     socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -150,7 +155,8 @@ int main(void)
 
     while(1)
 	{
-		sleep(10);
+		//sleep(10);
+                pause();
 	}
     unlink("./demo_socket");
     return 0;
