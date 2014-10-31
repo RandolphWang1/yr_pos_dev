@@ -10,11 +10,16 @@
 #include "aliqr.h"
 #include <syslog.h>
 
+#ifdef ALIPAY_FIFO
+#include <fcntl.h>
+#endif
 
 struct payInfo qrpay_info;
 //char qrQueryResult[1024] = {0};
 char time_mark[32] = {0};
-
+#ifdef ALIPAY_FIFO
+static unsigned int query_count;
+#endif
 
 /* timer to get alipay payment response -- sample code */ 
 void payment_alarm_handler(int sig) {
@@ -55,6 +60,7 @@ void payment_alarm_handler(int sig) {
        syslog(LOG_WARNING,"NO time_mark return from server!\n");
     if(payquery_result.qr_string[0]){
     struct sockaddr_un address;
+
     socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if(socket_fd < 0)
     {
@@ -94,7 +100,18 @@ void payment_alarm_handler(int sig) {
     write(pos_fd,"\n",1);
 #endif
     }
-    alarm(10);
+#ifdef ALIPAY_FIFO
+    query_count--;
+    if(query_count > 0)
+        alarm(10);
+    else {
+        syslog(LOG_INFO,"The query_server alarm timer is stopped!\n");
+        alarm(0);
+    }
+#else
+   alarm(10);
+#endif
+   
 }
  
 
@@ -123,17 +140,25 @@ int main(void)
     int i;
     char buffer[30] = {0};
     char pos_imsi[20] = {0};
+#ifdef ALIPAY_FIFO
+    int nbytes;
+    const char *fifo_name = "/tmp/alipay_fifo";
+    int pipe_fd = -1;
+    int res = 0;
+    int open_mode = O_RDONLY | O_NONBLOCK;
+    query_count = 5;
+#endif
     if (pos_imsi[0] == '\0'){
         /* get imsi from config.tx */
         fp = fopen("/usr/local/config.txt","r");
         if(fp == NULL)
         {
-            printf("couldn't open config.txt\n");
+            syslog(LOG_ERR,"couldn't open config.txt\n");
             return;
         }
         if( fgets(buffer, 30, fp) == NULL )
         {
-            printf("Error reading config\n");
+            syslog(LOG_ERR,"Error reading config\n");
             fclose(fp);
             return ;
         }
@@ -153,11 +178,42 @@ int main(void)
     signal(SIGALRM, payment_alarm_handler);
     alarm(10);
 
+#ifdef ALIPAY_FIFO
+    if(access(fifo_name, F_OK) == -1)  
+    {  
+        //管道文件不存在  
+        //创建命名管道  
+        res = mkfifo(fifo_name, 0777);  
+        if(res != 0)  
+        {  
+            syslog(LOG_ERR, "QUERY:Could not create fifo %s\n", fifo_name);  
+            return 1;  
+        }  
+    } 
+    pipe_fd = open(fifo_name, open_mode);
+    if (pipe_fd == -1) {
+        syslog(LOG_ERR,"Couldn't Open /tmp/ALIPAY_FIFO!\n");
+        return 1;
+    }
+#endif
     while(1)
 	{
 		//sleep(10);
+#ifdef ALIPAY_FIFO
+                memset(buffer, 0, 30);
+                nbytes = read(pipe_fd, buffer, 30);
+                if(nbytes > 0 || strncmp(buffer,"START",5) == 0) {
+                    syslog(LOG_INFO,"Get START Trigger From Main Server!\n"); 
+                    query_count = 10;
+                    alarm(10);
+                }
+#else 
                 pause();
+#endif //ALIPAY_FIFO
 	}
+#ifdef ALIPAY_FIFO
+    close(pipe_fd);
+#endif
     unlink("./demo_socket");
     return 0;
 }

@@ -4,7 +4,7 @@ OBJS = $(SRCS:.c = .o)
 CC = arm-linux-gcc
 
 query_server : $(OBJS)
-	$(CC) $^ -o $@ -I ./include  -lcurl -lexpat -L ../lib/ 
+	$(CC) -DALIPAY_FIFO $^ -o $@ -I ./include  -lcurl -lexpat -L ../lib/ 
 %.o : %.c
 	$(CC) -c $<
 clean:

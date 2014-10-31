@@ -16,6 +16,9 @@ extern struct sockaddr_un address;
 extern void showVersion(void);
 extern void Update_YRJT_Image(void);
 extern upload_debug_log(void);
+#ifdef ALIPAY_FIFO
+extern int pipe_fd;
+#endif
 
 
 void querySingle(void);
@@ -763,6 +766,10 @@ int SetMoney()
         printTail(buff);
     }
     pthread_mutex_unlock(&prmutex);
+    /* send trigger to query_server to start timer */
+#ifdef ALIPAY_FIFO
+    write(pipe_fd, "START", 6);
+#endif
     WaitKey(1000);
     return OK;
 
