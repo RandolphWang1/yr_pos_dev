@@ -1303,7 +1303,7 @@ START_PRINT:
         strcpy(PrintBuff,"序列号:");
         strcat(PrintBuff,queryNo);
         FillPrintBuff(PrintBuff);
-        strcpy(PrintBuff,"交易时间：");
+        strcpy(PrintBuff,"交易时间:");
         strcat(PrintBuff, serial2date(queryNo));
         FillPrintBuff(PrintBuff);	   
         strcpy(PrintBuff,"商户订单号:");
@@ -1313,7 +1313,7 @@ START_PRINT:
         strcat(PrintBuff, commTestOut.total_fee);
         FillPrintBuff(PrintBuff);
 
-        PrintEmptyLine(1);	 
+        PrintEmptyLine(3);	 
         ret =StartPrint();
         pthread_mutex_unlock(&prmutex);
         DebugOut("print error code:[%d]\n", ret);
@@ -1523,7 +1523,7 @@ int qrexchangedorder(void)
     Clear();
     TextOut(0, 3, ALIGN_LEFT, "结算（签退）");
     //ret = alipay_query_24h(result24h);
-    ret = preImsi((void*)&commTestOut,ALI_QUERY_24H);
+    ret = preImsi((void*)&commTestOut,ALI_EXCHANGEORDER);
     strcpy(result24h,commTestOut.order);
 
     trade_num = SplitStr(result24h,trade_ptr,"|");
@@ -1833,6 +1833,7 @@ START_PRINT:
     SetPrintIndent(0);
     SetPrintFont(32);
 
+#if 1
     sprintf(total24h_feestr,"%d", total24h_fee);
     printf("\nbefore:%s\n", total24h_feestr);
     Moneyformat(total24h_feestr);
@@ -1845,6 +1846,20 @@ START_PRINT:
     sprintf(trade_numstr, "总单数:%d", trade_num);
     strcpy(PrintBuff, trade_numstr);
     FillPrintBuff(PrintBuff);	   
+//#else
+    strcpy(PrintBuff,"总金额：");
+    strcat(PrintBuff, commTestOut.amount_total);
+    FillPrintBuff(PrintBuff);
+    strcpy(PrintBuff,"总退款金额：");
+    strcat(PrintBuff, commTestOut.refund_amount);
+    FillPrintBuff(PrintBuff);
+    strcpy(PrintBuff,"总剩余金额：");
+    strcat(PrintBuff, commTestOut.remain_amount);
+    FillPrintBuff(PrintBuff);
+    sprintf(trade_numstr, "总单数:%d", commTestOut.order_total);
+    strcpy(PrintBuff, trade_numstr);
+    FillPrintBuff(PrintBuff);
+#endif
     PrintEmptyLine(3);	 
     ret = StartPrint();
     pthread_mutex_unlock(&prmutex);
@@ -1854,9 +1869,9 @@ START_PRINT:
         if(ret == -1)
             goto START_PRINT;
         else if(ret == -2)
-             goto end2;
+            goto end2;
         else if(ret == -3)
-             goto end1;
+            goto end1;
     }   
     goto normal;
 end1:  
