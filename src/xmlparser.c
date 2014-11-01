@@ -34,6 +34,110 @@
 char stqrcode[QRRESULTSTR]={0};
 char timemark[32]={0};
 char qrout_trade_no[65]={0};
+static struct qr_result* st_query_result;
+
+int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int order_type)
+{
+    CURL *curl;
+    CURLcode res;
+    char https_req[1024*3];
+    int req_len = 0;
+
+    XML_Parser parser;
+    struct ParserStruct state;
+    st_query_result = query_result;
+    /* Initialize the state structure for parsing. */
+    memset(&state, 0, sizeof(struct ParserStruct));
+    state.ok = 1;
+
+    /* Initialize a namespace-aware parser. */
+    parser = XML_ParserCreateNS(NULL, '\0');
+    XML_SetUserData(parser, &state);
+    XML_SetElementHandler(parser, startElement, endElement);
+    XML_SetCharacterDataHandler(parser, characterDataHandler);
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+    if(curl) {
+        alipay_precreate(https_req, &req_len, order_info, order_type);
+        printf("https_req:\n%s\n, len:%d\n", https_req, req_len);
+        curl_easy_setopt(curl, CURLOPT_URL,alipay_postcreate(order_type));
+
+        printf("https_req:\n%s\n",alipay_postcreate(order_type));
+        curl_easy_setopt(curl, CURLOPT_POST,1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS,https_req);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, req_len);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, parseStreamCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)parser);
+
+#ifdef SKIP_PEER_VERIFICATION
+        /*
+         * If you want to connect to a site who isn't using a certificate that is
+         * signed by one of the certs in the CA bundle you have, you can skip the
+         * verification of the server's certificate. This makes the connection
+         * A LOT LESS SECURE.
+         *
+         * If you have a CA cert for the server stored someplace else than in the
+         * default bundle, then the CURLOPT_CAPATH option might come handy for
+         * you.
+         */
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+#endif
+
+#ifdef SKIP_HOSTNAME_VERIFICATION
+        /*
+         * If the site you're connecting to uses a different host name that what
+         * they have mentioned in their server certificate's commonName (or
+         * subjectAltName) fields, libcurl will refuse to connect. You can skip
+         * this check, but this will make the connection less secure.
+         */
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+#endif
+
+        /* Perform the request, res will get the return code */
+        res = curl_easy_perform(curl);
+        /* Check for errors */
+        if(res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                    curl_easy_strerror(res));
+        } else if (state.ok) {
+            /* Expat requires one final call to finalize parsing. */
+            if (XML_Parse(parser, NULL, 0, 1) == 0) {
+                int error_code = XML_GetErrorCode(parser);
+                fprintf(stderr, "Finalizing parsing failed with error code %d (%s).\n",
+                        error_code, XML_ErrorString(error_code));
+            }
+            else {
+                printf("                     --------------\n");
+                printf("                     %lu tags total\n", state.tags);
+                printf("                     %s tags total\n", state.characters.memory);
+                //memcpy(qr_result,stqrcode,strlen(stqrcode));
+                if(stqrcode[0] != '\0') {
+                    memcpy(query_result->order,stqrcode,strlen(stqrcode));
+                    printf("the qr_result is %s\n, the stqrcode is %s sizeof(stqrcode):%d\n",query_result->order,stqrcode,QRRESULTSTR);
+                    memset(stqrcode,0, QRRESULTSTR);
+                }
+                if(strlen(timemark) > 0) {
+                    memcpy(query_result->time_mark,timemark,strlen(timemark));
+                }
+                if(strlen(qrout_trade_no) > 0) {
+                    memcpy(query_result->out_trade_no,qrout_trade_no,strlen(qrout_trade_no));
+                }
+            }
+
+        }
+        /* Clean up. */
+        free(state.characters.memory);
+        XML_ParserFree(parser);
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+    return 0;
+}
 
 void startElement(void *userData, const XML_Char *name, const XML_Char **atts)
 {
@@ -69,7 +173,95 @@ void endElement(void *userData, const XML_Char *name)
 {
     struct ParserStruct *state = (struct ParserStruct *) userData;
     state->depth--;
-   // printf("%5lu    %5lu   %10lu   %s %s\n",state->tags, state->depth, state->characters.size, name, state->characters.memory);
+    if(state->characters.size)
+    printf("%5lu    %5lu   %10lu   %s %s\n",state->tags, state->depth, state->characters.size, name, state->characters.memory);
+
+
+    if( strcmp(name,"order") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->order, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"is_success") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(&st_query_result->is_success, state->characters.memory,state->characters.size);
+        }
+    }
+
+    if( strcmp(name,"serial_number") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->serial_number, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"out_trade_no") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->out_trade_no, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"trade_no") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->trade_no, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"total_fee") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->total_fee, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"total_status") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->total_status, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"qrcode") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->qrcode, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"time_mark") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->time_mark, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"refund_amount") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->refund_amount, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"remain_amount") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->remain_amount, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"order_total") == 0) {
+        if(state->characters.memory != NULL) {
+            st_query_result->order_total =atoi(state->characters.memory);
+        }
+    }
+    if( strcmp(name,"amount_total") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->amount_total, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"exchange_start_time") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->exchange_start_time, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"exchange_end_time") == 0) {
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->exchange_end_time, state->characters.memory,state->characters.size);
+        }
+    }
+
+    if( strcmp(name,"result") == 0) {
+        if(strstr(state->characters.memory, "qr.alipay.com")) {
+         //   memcpy(stqrcode,state->characters.memory,state->characters.size);
+            memcpy(st_query_result->qrcode, state->characters.memory,state->characters.size);
+            printf("qrgenerate:%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
+        }
+    }
+#if 0
     if( strcmp(name,"result") == 0) {
         //get the qrout_trade_no should be sync with server and request
         if(state->tags == 11) {
@@ -79,64 +271,16 @@ void endElement(void *userData, const XML_Char *name)
         //get the qrcode 
         if(strstr(state->characters.memory, "qr.alipay.com")) {
             memcpy(stqrcode,state->characters.memory,state->characters.size);
+            memcpy(st_query_result->qrcode, state->characters.memory,state->characters.size);
             printf("qrgenerate:%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
         }
     }
-}
-
-void endElement1(void *userData, const XML_Char *name)
-{
-    struct ParserStruct *state = (struct ParserStruct *) userData;
-    state->depth--;
-    if( strcmp(name,"response") == 0){
-        if(strstr(state->characters.memory, "TRADE_SUCCESS")) {
-            memset(stqrcode,0, sizeof(stqrcode));
-            memcpy(stqrcode,state->characters.memory,state->characters.size);
-            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
-        }
-        else
-            strcpy(stqrcode,"TRADE_FAILURE");
-  }
-}
-
-#if 1
-void endElement2(void *userData, const XML_Char *name)
-{
-    struct ParserStruct *state = (struct ParserStruct *) userData;
-    state->depth--;
-    if( strcmp(name,"time_mark") == 0){
-        if(state->characters.memory != NULL) {
-            memcpy(timemark,state->characters.memory,state->characters.size);
-            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
-        }
-    }
-    if( strcmp(name,"order") == 0){
-        if(state->characters.memory != NULL) {
-            memset(stqrcode,0, sizeof(stqrcode));
-            memcpy(stqrcode,state->characters.memory,state->characters.size);
-            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
-        }
-    }
-}
 #endif
-
-void endElement3(void *userData, const XML_Char *name)
-{
-    struct ParserStruct *state = (struct ParserStruct *) userData;
-    state->depth--;
-    if(strcmp(name,"result") == 0){
-        if(state->characters.memory != NULL&&strstr(state->characters.memory, "TRADE_SUCCESS")) { 
-            memset(stqrcode,0, sizeof(stqrcode));
-            memcpy(stqrcode,state->characters.memory,state->characters.size);
-            printf("%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
-        }else {
-            strcpy(stqrcode,"TRADE_FAILURE");
-        }
-    }
 }
 
 void endElementPrint(void *userData, const XML_Char *name)
 {
+#if 0
     struct ParserStruct *state = (struct ParserStruct *) userData;
     char PrintBuff[100] = {0};
     state->depth--;
@@ -149,6 +293,7 @@ void endElementPrint(void *userData, const XML_Char *name)
         FillPrintBuff(PrintBuff);
     }
     
+#endif
 }
 size_t parseStreamCallback(void *contents, size_t length, size_t nmemb, void *userp)
 {

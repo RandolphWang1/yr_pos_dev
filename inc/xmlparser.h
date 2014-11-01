@@ -33,8 +33,6 @@
 #include <string.h>
 #include <assert.h>
 
-//#include <expat.h>
-//#include <curl/curl.h>
 #include "expat/expat.h"
 #include "curl/curl.h"
 

@@ -1261,7 +1261,7 @@ void querySingle(void)
     //memcpy(queryNo,prefix,11);
     //memcpy(queryNo+11,hmno,6);
     printf("queryNo:%s\n",queryNo);
-    ret = alipay_query_single((unsigned long long)atoll(queryNo));
+    //ret = alipay_query_single((unsigned long long)atoll(queryNo));
     if(ret)
     {
         char PrintBuff[30];
@@ -1344,7 +1344,7 @@ void query24h(void)
     char total24h_feestr[16] = {0};
     Clear();
     TextOut(0, 3, ALIGN_LEFT, "查询近24小时成功交易");
-    ret = alipay_query_24h(result24h);
+    //ret = alipay_query_24h(result24h);
 
     trade_num = SplitStr(result24h,trade_ptr,"|");
 
