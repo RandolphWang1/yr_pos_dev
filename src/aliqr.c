@@ -72,7 +72,7 @@ int alipay_precreate(char* precr, int* len, struct payInfo* order_info,int type)
 	//printf("\nencrypt output:");
 	//puts(hex_output);
     //printf("digest:%s\n",digest);
-	*len = sprintf(https,"%s&sign=%s", common,hex_output);
+	*len = sprintf(https,"%s&s=%s", common,hex_output);
 	//puts(https);
 	memset(precr, 0, *len+1);
 	memcpy(precr, https, *len);

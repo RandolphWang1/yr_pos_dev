@@ -126,7 +126,7 @@ int generator_qrcode_to_bmp(int out, char* price)
     memset(qrpay_info.order_subject,0, sizeof(qrpay_info.order_subject));
     strcpy(qrpay_info.order_subject,subject);
     //strcpy(qrpay_info.order_subject,"%E5%88%86%E8%B4%A6%E6%B5%8B%E8%AF%95-sky");
-    strcpy(qrpay_info.order_time,"2014-08-0514:15:30");
+    strcpy(qrpay_info.order_time,"20140805141530");
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
     /* print the qr code from alipay */
     alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_PREORDER);

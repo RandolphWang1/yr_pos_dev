@@ -15,6 +15,7 @@ struct payInfo {
     char refund_amount[9+1+2+1]; //refund
     int  max_time; // for query 120 = 2hours
     char time_mark[14+1]; // for query with time_mark
+    char take_out_phone[30]; // for query with time_mark
 #endif
 #if 0
     char *imsi;
@@ -54,8 +55,8 @@ struct qr_result {
 
 #define POSTPREORDER        "http://"ALISER":8080/qrcode/preorder/?"
 #define POSTEXCHANGE        "http://"ALISER":8080/qrcode/exchange/?"
-#define POSTEXCHANGEORDER   "http://"ALISER":8080/qrcode/exchangeorder/?"
-#define POSTQUERY           "http://"ALISER":8080/qrcode/query/?"
+#define POSTEXCHANGEORDER   "http://"ALISER":8080/qrcode/exchangedorder/?"
+#define POSTQUERY           "http://"ALISER":8080/qrcode/q/?"
 #define POSTVIEW            "http://"ALISER":8080/qrcode/view/?"
 #define POSTREFUND          "http://"ALISER":8080/qrcode/refund/?"
 #define POSTTEMPLATEMD5     "http://"ALISER":8080/qrcode/template/md5/?"
@@ -63,14 +64,16 @@ struct qr_result {
 #define POSTLATESTMD5       "http://"ALISER":8080/qrcode/lastest/md5/?"
 #define POSTLATEST          "http://"ALISER":8080/qrcode/lastest/?"
 
-
-#define PREORDER "IMSI=%s&order_time=%s&serial_number=%lld&subject=%s&total_fee=%s", order_info->imsi, order_info->order_time, order_info->order_number, order_info->order_subject, order_info->total_fee
-
-#define PREQUERYTIMEMASK "IMSI=%s&time_mark=%s", order_info->imsi, order_info->time_mark
-#define PREQUERYMAXTIME "IMSI=%s&max_time=%d", order_info->imsi, order_info->max_time
-#define PREIMSI "IMSI=%s", order_info->imsi
-#define PREVIEW "IMSI=%s&serial_number=%lld", order_info->imsi, order_info->order_number
-#define PREREFUND "IMSI=%s&refund_amount=%s&serial_number=%lld", order_info->imsi, order_info->refund_amount,order_info->order_number
+#if 1
+#define PREORDER "i=%s&ot=%s&sj=%s&sn=%lld&tf=%s", order_info->imsi, order_info->order_time,order_info->order_subject, order_info->order_number, order_info->total_fee
+#else
+#define PREORDER "i=%s&ot=%s&sj=%s&sn=%lld&tf=%s&tp=13810362150", order_info->imsi, order_info->order_time,order_info->order_subject, order_info->order_number, order_info->total_fee
+#endif
+#define PREQUERYTIMEMASK "i=%s&tm=%s", order_info->imsi, order_info->time_mark
+#define PREQUERYMAXTIME "i=%s&mt=%d", order_info->imsi, order_info->max_time
+#define PREIMSI "i=%s", order_info->imsi
+#define PREVIEW "i=%s&sn=%lld", order_info->imsi, order_info->order_number
+#define PREREFUND "i=%s&rfa=%s&sn=%lld", order_info->imsi, order_info->refund_amount,order_info->order_number
 
 enum precreate_type {
     ALI_PREORDER = 0, /* require an online order qrcode from alipay */
