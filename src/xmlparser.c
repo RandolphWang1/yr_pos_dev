@@ -46,6 +46,7 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
     XML_Parser parser;
     struct ParserStruct state;
     st_query_result = query_result;
+    memset(query_result, 0, sizeof(struct qr_result));
     /* Initialize the state structure for parsing. */
     memset(&state, 0, sizeof(struct ParserStruct));
     state.ok = 1;

@@ -1524,6 +1524,7 @@ int qrexchangedorder(void)
     TextOut(0, 3, ALIGN_LEFT, "结算（签退）");
     //ret = alipay_query_24h(result24h);
     memset(result24h, 0, sizeof(result24h));
+    memset(commTestOut.order, 0, sizeof(commTestOut.order));
     ret = preImsi((void*)&commTestOut,ALI_EXCHANGEORDER);
     strcpy(result24h,commTestOut.order);
 
@@ -1710,6 +1711,7 @@ void query24h(void)
     TextOut(0, 3, ALIGN_LEFT, "查询近24小时成功交易");
     //ret = alipay_query_24h(result24h);
     memset(result24h, 0, sizeof(result24h));
+    memset((void*)&commTestOut, 0, sizeof(commTestOut));
     ret = preImsi((void*)&commTestOut,ALI_QUERY_24H);
     strcpy(result24h,commTestOut.order);
 
