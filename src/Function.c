@@ -97,8 +97,7 @@ int OtherFunc()
 				UpdateAppFromU();
 				break;
 			case 3:
-				//SMS_Demo();
-                                generator_qrcode_to_bmp(1,"1.00"); 
+				SMS_Demo();
 				break;
 
 		}

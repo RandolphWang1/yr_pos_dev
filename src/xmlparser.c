@@ -111,8 +111,9 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
             else {
                 printf("                     --------------\n");
                 printf("                     %lu tags total\n", state.tags);
-                printf("                     %s tags total\n", state.characters.memory);
+                //printf("                     %s tags total\n", state.characters.memory);
                 //memcpy(qr_result,stqrcode,strlen(stqrcode));
+#if 0
                 if(stqrcode[0] != '\0') {
                     memcpy(query_result->order,stqrcode,strlen(stqrcode));
                     printf("the qr_result is %s\n, the stqrcode is %s sizeof(stqrcode):%d\n",query_result->order,stqrcode,QRRESULTSTR);
@@ -124,6 +125,7 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
                 if(strlen(qrout_trade_no) > 0) {
                     memcpy(query_result->out_trade_no,qrout_trade_no,strlen(qrout_trade_no));
                 }
+#endif
             }
 
         }
@@ -135,7 +137,7 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
     }
 
     curl_global_cleanup();
-
+    printf("exit alipay_main");
     return 0;
 }
 
@@ -177,83 +179,88 @@ void endElement(void *userData, const XML_Char *name)
     printf("%5lu    %5lu   %10lu   %s %s\n",state->tags, state->depth, state->characters.size, name, state->characters.memory);
 
 
-    if( strcmp(name,"order") == 0) {
+    if( strcmp(name,"o") == 0) {//order
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->order, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"is_success") == 0) {
+    if( strcmp(name,"is") == 0) { //is_success
         if(state->characters.memory != NULL) {
             memcpy(&st_query_result->is_success, state->characters.memory,state->characters.size);
         }
     }
 
-    if( strcmp(name,"serial_number") == 0) {
+    if( strcmp(name,"sn") == 0) { //serial_number
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->serial_number, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"out_trade_no") == 0) {
+    if( strcmp(name,"on") == 0) {//out_trade_no
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->out_trade_no, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"trade_no") == 0) {
+    if( strcmp(name,"tn") == 0) {//trade_no
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->trade_no, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"total_fee") == 0) {
+    if( strcmp(name,"tf") == 0) {//total_fee
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->total_fee, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"total_status") == 0) {
+    if( strcmp(name,"ts") == 0) {//total_status
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->total_status, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"qrcode") == 0) {
+    if( strcmp(name,"q") == 0) {//qrcode
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->qrcode, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"time_mark") == 0) {
+    if( strcmp(name,"tm") == 0) {//time_mark
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->time_mark, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"refund_amount") == 0) {
+    if( strcmp(name,"rfa") == 0) {//refund_amount
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->refund_amount, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"remain_amount") == 0) {
+    if( strcmp(name,"rma") == 0) {//remain_amount
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->remain_amount, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"order_total") == 0) {
+    if( strcmp(name,"to") == 0) {//order_total
         if(state->characters.memory != NULL) {
             st_query_result->order_total =atoi(state->characters.memory);
         }
     }
-    if( strcmp(name,"amount_total") == 0) {
+    if( strcmp(name,"at") == 0) {//amount_total
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->amount_total, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"exchange_start_time") == 0) {
+    if( strcmp(name,"est") == 0) {//exchange_start_time
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->exchange_start_time, state->characters.memory,state->characters.size);
         }
     }
-    if( strcmp(name,"exchange_end_time") == 0) {
+    if( strcmp(name,"eet") == 0) {//exchange_end_time
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->exchange_end_time, state->characters.memory,state->characters.size);
         }
     }
-
+    if( strcmp(name,"tp") == 0) {//take out telephone number 
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->take_out_phone, state->characters.memory,state->characters.size);
+        }
+    }
+#if 0
     if( strcmp(name,"result") == 0) {
         if(strstr(state->characters.memory, "qr.alipay.com")) {
          //   memcpy(stqrcode,state->characters.memory,state->characters.size);
@@ -261,6 +268,7 @@ void endElement(void *userData, const XML_Char *name)
             printf("qrgenerate:%5lu   %10lu   %s %s\n", state->depth, state->characters.size, name, state->characters.memory);
         }
     }
+#endif
 #if 0
     if( strcmp(name,"result") == 0) {
         //get the qrout_trade_no should be sync with server and request

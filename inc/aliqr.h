@@ -15,7 +15,7 @@ struct payInfo {
     char refund_amount[9+1+2+1]; //refund
     int  max_time; // for query 120 = 2hours
     char time_mark[14+1]; // for query with time_mark
-    char take_out_phone[30]; // for query with time_mark
+    char take_out_phone[30]; // for take out 
 #endif
 #if 0
     char *imsi;
@@ -43,6 +43,7 @@ struct qr_result {
     char amount_total[10+1+2+1];
     char exchange_start_time[19+1];
     char exchange_end_time[19+1];
+    char take_out_phone[30]; // for take out 
 };
 
 #define QRRESULT sizeof(struct qr_result)
@@ -52,6 +53,8 @@ struct qr_result {
 #else
 #define ALISER "182.92.8.2"
 #endif
+
+#define ORDERKEY "11"
 
 #define POSTPREORDER        "http://"ALISER":8080/qrcode/preorder/?"
 #define POSTEXCHANGE        "http://"ALISER":8080/qrcode/exchange/?"
@@ -73,7 +76,11 @@ struct qr_result {
 #define PREQUERYMAXTIME "i=%s&mt=%d", order_info->imsi, order_info->max_time
 #define PREIMSI "i=%s", order_info->imsi
 #define PREVIEW "i=%s&sn=%lld", order_info->imsi, order_info->order_number
+#if 0
 #define PREREFUND "i=%s&rfa=%s&sn=%lld", order_info->imsi, order_info->refund_amount,order_info->order_number
+#else
+#define PREREFUND "i=%s&sn=%lld", order_info->imsi, order_info->order_number
+#endif
 
 enum precreate_type {
     ALI_PREORDER = 0, /* require an online order qrcode from alipay */

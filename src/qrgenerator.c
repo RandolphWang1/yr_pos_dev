@@ -14,14 +14,6 @@ char pos_imsi[20];
 void getIMSIconfig();
 char szQrcodeString[QRRESULT] = {0};
 
-int viewsingle(int temp);
-int createrefund(char* serial_number, char* refund_amount );
-
-int generator_qrcode_to_bmp(int out, char* price);
-
-int preImsi(int precreate_type);
-int qTimemark(char* time_mark);
-int qMaxtime(int max_time);
 char* subject = "Alipay";
 #if 0
 int main(int argc, char** argv)
@@ -81,29 +73,30 @@ int main(int argc, char** argv)
 }
 #endif
 
-int generator_qrcode_to_bmp(int out, char* price)
+int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
 {
     char* szSourceString = NULL;
     // code from d620d start
     int ret;
     int enc_mode;
-
+    struct qr_result* out = (struct qr_result*)gout; 
+    struct payInfo* in = (struct payInfo*)gin; 
     // code from d620d end
 
 
     T_DATETIME tTime;
-    char ticket_number[13]={0};
-    char client_number[21]={0};
-
+    char ticket_number[13] = {0};
+    char client_number[21] = {0};
+    char order_time[13] = {0};
     client_number[0] = '1';//to avoid 0 atoi bug
     getIMSIconfig();
-    strcpy(qrpay_info.order_key,"11");
+    strcpy(qrpay_info.order_key,ORDERKEY);
 #if 1
     /* Time for D620D Pos */
     GetDateTime(&tTime);
     if(query_number == 0) { //if query_number != 0 then time will nto changed, bug
         sprintf(ticket_number,"%s%s%s%s%s00",tTime.year,tTime.month,tTime.day,tTime.hour,tTime.minute);
-        sprintf(ticket_number,"%s%s%s%s%s00","14","10","10","10","10");
+        //sprintf(ticket_number,"%s%s%s%s%s00","14","10","10","10","10");
         /* use last 4-bit of IMSI */
         strncpy(client_number+1, &(qrpay_info.imsi[11]), 5);
         strcat(client_number, ticket_number);
@@ -117,26 +110,33 @@ int generator_qrcode_to_bmp(int out, char* price)
         }
     }
 
-#else
     qrpay_info.order_number = query_number;
 #endif
     strcpy(qrpay_info.total_fee,price);
     //strcpy(qrpay_info.total_fee,"0.01");^M
     //strcpy(qrpay_info.order_subject,"ccc");
     memset(qrpay_info.order_subject,0, sizeof(qrpay_info.order_subject));
-    strcpy(qrpay_info.order_subject,subject);
+    if(in && strlen(in->order_subject) > 0)
+        strcpy(qrpay_info.order_subject,in->order_subject);
+    else
+        strcpy(qrpay_info.order_subject,subject);
     //strcpy(qrpay_info.order_subject,"%E5%88%86%E8%B4%A6%E6%B5%8B%E8%AF%95-sky");
-    strcpy(qrpay_info.order_time,"20140805141530");
+
+    sprintf(order_time, "%s%s%s%s%s%s%s", 
+            tTime.century, tTime.year, tTime.month, tTime.day,
+            tTime.hour, tTime.minute, tTime.second);
+    strcpy(qrpay_info.order_time,order_time);
+
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
     /* print the qr code from alipay */
-    alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_PREORDER);
+    alipay_main(out, &qrpay_info, ALI_PREORDER);
     szSourceString = szQrcodeString;
-    if(szQrcodeString[0] != '\0') {
+    if(strstr(out->qrcode, "https://qr.alipay.com/")) {
         /* print QR code on D620D */
         //ret = PrintQR(10, 1, 2, szSourceString, 5, 5);
         //ret = PrintQR(6, 1, 2, szSourceString, 5, 7);
-        //  ret = PrintQR(6, 3, 2, szSourceString, 50, 7);
-        printf("qrcode%s\n",szSourceString);
+        ret = PrintQR(6, 3, 2, out->qrcode, 50, 7);
+        printf("qrcode:%s\n",out->qrcode);
         if (0 > ret)
         {
             printf("the PrintQR return value is %d\n",ret);
@@ -147,19 +147,20 @@ int generator_qrcode_to_bmp(int out, char* price)
     return ret;
 }
 
-int preImsi(int precreate_type)
+int preImsi(void* gout, int precreate_type)
 {
 
+    struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
-    memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
-    /* print the qr code from alipay */
-    alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, precreate_type );
+    strcpy(qrpay_info.order_key,ORDERKEY);
+    alipay_main(out, &qrpay_info, precreate_type );
 
 }
 #if 1
-int qTimemark(char* time_mark)
+int qTimemark(void* gout, char* time_mark)
 {
 
+    struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
     strcpy(qrpay_info.time_mark, time_mark);
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
@@ -167,9 +168,10 @@ int qTimemark(char* time_mark)
     alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_QUERY_TIMEMARK);
 
 }
-int qMaxtime(int max_time)
+int qMaxtime(void* gout, int max_time)
 {
 
+    struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
     qrpay_info.max_time = max_time;
     memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
@@ -178,27 +180,29 @@ int qMaxtime(int max_time)
 
 }
 #endif
-int createrefund(char* serial_number, char* refund_amount )
+int createrefund(void* gout, char* serial_number, char* refund_amount )
 {
 
+    struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
+    strcpy(qrpay_info.order_key,ORDERKEY);
     //qrpay_info.order_number = query_number;
     qrpay_info.order_number = atoll(serial_number);
-    strcpy(qrpay_info.refund_amount, refund_amount);
-    memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
+    //strcpy(qrpay_info.refund_amount, refund_amount);
+    //memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
     /* print the qr code from alipay */
-    alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_REFUND);
+    alipay_main(out, &qrpay_info, ALI_REFUND);
 
 }
 
-int viewsingle(int temp)
+int viewsingle(void* gout,char* serial_number)
 {
+    struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
-    qrpay_info.order_number = query_number;
-    memset(szQrcodeString, 0,sizeof(szQrcodeString)); 
+    qrpay_info.order_number = atoll(serial_number);
     /* print the qr code from alipay */
-    alipay_main((struct qr_result*)szQrcodeString, &qrpay_info, ALI_VIEW_SINGLE);
-
+    alipay_main(out, &qrpay_info, ALI_VIEW_SINGLE);
+    return 1;
 }
 
 #if 1

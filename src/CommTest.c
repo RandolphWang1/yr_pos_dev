@@ -1,6 +1,6 @@
 #include "Main.h"
-#include "qrgenerator.h"
 #include "aliqr.h"
+#include "qrgenerator.h"
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/types.h>
@@ -18,9 +18,12 @@ extern void Update_YRJT_Image(void);
 extern upload_debug_log(void);
 
 
+void refund(void);
+void qrexchange(void);
+int qrexchangedorder(void);
 void querySingle(void);
 void *thr_fn(void* arg);
-void printTail(char* price);
+void printTail(char* price, char* out_trade_no);
 char* Moneyformat(char* buf);
 char* serial2date(char* serialNo);
 unsigned int Money2int(char* buf);
@@ -30,6 +33,10 @@ char result24h[QRRESULT] = {0};
 #ifdef ALIPAY_QUERY
 extern unsigned long long query_number; 
 extern char qrout_trade_no[];
+
+static struct payInfo commTestIn;
+static struct qr_result commTestOut;
+
 int SplitStr(char *buff, char *parr[], char *token) 
 {
         char *pc = strtok(buff, token); 
@@ -540,23 +547,42 @@ void SetCommParam()
 		//TextOutByPixel(95, 30, "盈润捷通");
 		TextOutByPixel(115, 30, "盈润捷通");
 
-        ShowBmpFile(90, 75, "pic/button.bmp");
-        TextOutByPixel(105, 80, "0.关机");
+        ShowBmpFile(30, 75, "pic/button.bmp");
+        TextOutByPixel(45, 80, "0.关机");
 
-        ShowBmpFile(90, 110, "pic/button.bmp");
-        TextOutByPixel(105, 115, "1.支付宝");
+        ShowBmpFile(30, 110, "pic/button.bmp");
+        TextOutByPixel(45, 115, "1.支付宝");
 
-        ShowBmpFile(90, 145, "pic/button.bmp");
-        TextOutByPixel(105, 150, "2.逐单查询");
+        ShowBmpFile(30, 145, "pic/button.bmp");
+        TextOutByPixel(45, 150, "2.逐单查询");
 
-        ShowBmpFile(90, 180, "pic/button.bmp");
-        TextOutByPixel(105, 185, "3.日结");
+        ShowBmpFile(30, 180, "pic/button.bmp");
+        TextOutByPixel(45, 185, "3.日结");
+
+        ShowBmpFile(170, 75, "pic/button.bmp");
+        TextOutByPixel(185, 80, "5.签到");
+
+        ShowBmpFile(170, 110, "pic/button.bmp");
+        TextOutByPixel(185, 115, "6.结算签退");
+
+#ifdef REFUND_EN
+        ShowBmpFile(170, 145, "pic/button.bmp");
+        TextOutByPixel(185, 150, "7.退货");
+#endif
 
         printf("go before SetCommParam WaitLimitKey\n");
+#ifdef REFUND_EN
 #ifdef RECEIPT_CONF
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x0a\x12", 7, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x06\x07\x0a\x0d\x12", 11, 0);
 #else
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x0a\x12", 6, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x05\x06\x07\x0a\x0d\x12", 10, 0);
+#endif
+#else
+#ifdef RECEIPT_CONF
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x0a\x0d\x12", 8, 0);
+#else
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x0a\x0d\x12", 7, 0);
+#endif
 #endif
         printf("go after SetCommParam WaitLimitKey\n");
         memset(sKeyName, 0, sizeof(sKeyName));
@@ -605,37 +631,20 @@ void SetCommParam()
                
 			case KEY_4:
 			#ifdef RECEIPT_CONF
-			        SetReceiptInfo();
+			    SetReceiptInfo();
 			#else	
 				SetCDMA();
 			#endif	
 				break;	
-			case KEY_6:
-				JingZhenTest();
-				break;	
             case KEY_5:
-                while(1)
-                   {
-					Clear(); 
-					TextOut(0, 3, ALIGN_CENTER, "请选择WiFi连接方式");
-					TextOut(0, 4, ALIGN_CENTER, "1.手动设置");
-					TextOut(0, 5, ALIGN_CENTER, "2.自动设置");
-
-	                ucKey = WaitLimitKey("\x01\x02\x12", 8, 0);
-	                if ('\x01' == ucKey)
-	                	{
-							gTerm.bAutoWifi = FALSE;
-	                     	Set_Wifi();	
-	                	}
-	                if ('\x02' == ucKey)
-	                	{
-							gTerm.bAutoWifi = TRUE;
-	                     	Set_Wifi_Auto();	
-	                	}
-	                if ('\x12' == ucKey)
-                            break;
-				}
+                qrexchange();
                 break;
+			case KEY_6:
+                qrexchangedorder();
+				break;	
+			case KEY_7:
+                refund();
+				break;	
             case KEY_F1:
 				Clear();	
 				TextOutByPixel(105, 60, "1.当前版本");
@@ -651,6 +660,9 @@ void SetCommParam()
 	            if ('\x03' == ucKey)
 					upload_debug_log();
 				break;
+            case KEY_F2:
+				JingZhenTest();
+				break;	
 		}
 	}
 }
@@ -749,7 +761,11 @@ int SetMoney()
     printf("\nafter:%s\n", buff);
     pthread_mutex_lock(&prmutex);
     print_logo();
-    ret = generator_qrcode_to_bmp(1,buff);
+    //strcpy(commTestIn.order_subject,gRCP.rcp_title_company);
+    //strcpy(commTestIn.order_subject,"北京金湖餐饮有限公司金湖环贸店");
+    //strcpy(commTestIn.order_subject,"%E5%88%86%E8%B4%A6%E6%B5%8B%E8%AF%95-sky");
+    strcpy(commTestIn.order_subject,"AliPay");
+    ret = generator_qrcode_to_bmp((void*)&commTestOut,buff,(void*)&commTestIn);
 	//system(buff);	 
 
     OkBeep();
@@ -760,7 +776,7 @@ int SetMoney()
     else {
         //TextOut(2, 4, ALIGN_CENTER, "input money OK!");
         TextOut(2, 4, ALIGN_CENTER, "稍等，正在输出二维码...");
-        printTail(buff);
+        printTail(buff,commTestOut.out_trade_no);
     }
     pthread_mutex_unlock(&prmutex);
     WaitKey(1000);
@@ -824,7 +840,7 @@ unsigned int Money2int(char* buf)
     return feeint;
 }
 
-void printTail(char* price)
+void printTail(char* price, char* out_trade_no)
 {
     int ret = 0;
     char printBuff[50];
@@ -838,11 +854,11 @@ START_PRINT:
     SetPrintFont(32);
     sprintf(printBuff,"序列号:%lld",query_number);
     FillPrintBuff(printBuff);
-    if(strlen(qrout_trade_no) > 0) {
+    if(strlen(out_trade_no) > 0) {
         strcpy(printBuff,"商户订单号:");
-        strcat(printBuff,qrout_trade_no);
+        strcat(printBuff,out_trade_no);
         FillPrintBuff(printBuff);
-        memset(qrout_trade_no,0, 65);
+        memset(out_trade_no,0, 65);
     }
     PrintEmptyLine(1);
     SetPrintIndent(0);
@@ -1262,6 +1278,8 @@ void querySingle(void)
     //memcpy(queryNo+11,hmno,6);
     printf("queryNo:%s\n",queryNo);
     //ret = alipay_query_single((unsigned long long)atoll(queryNo));
+    
+    ret = viewsingle((void*)&commTestOut, queryNo);
     if(ret)
     {
         char PrintBuff[30];
@@ -1281,11 +1299,21 @@ START_PRINT:
         SetPrintFont(32);
         strcpy(PrintBuff,"以下交易确已成功");
         FillPrintBuff(PrintBuff);
+
         strcpy(PrintBuff,"序列号:");
+        strcat(PrintBuff,queryNo);
         FillPrintBuff(PrintBuff);
-        strcpy(PrintBuff,queryNo);
+        strcpy(PrintBuff,"交易时间：");
+        strcat(PrintBuff, serial2date(queryNo));
         FillPrintBuff(PrintBuff);	   
-        PrintEmptyLine(3);	 
+        strcpy(PrintBuff,"商户订单号:");
+        strcat(PrintBuff,commTestOut.out_trade_no);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"金额：");
+        strcat(PrintBuff, commTestOut.total_fee);
+        FillPrintBuff(PrintBuff);
+
+        PrintEmptyLine(1);	 
         ret =StartPrint();
         pthread_mutex_unlock(&prmutex);
         DebugOut("print error code:[%d]\n", ret);
@@ -1327,6 +1355,341 @@ normal:
 
 }
 
+void refund(void)
+{
+    int ret = 0, i;
+    T_DATETIME tTime;
+    char PrintBuff[100];
+    char order_time[13] = {0};
+    char queryNo[18] = {0};
+    char prefix[12] = {0};
+    Clear();
+    TextOut(0, 2, ALIGN_LEFT, "请输入交易单上序列号的后6位");
+    TextOut(0, 3, ALIGN_LEFT, "退款");
+    getSNoPre(prefix);
+    printf("queryNO prefixint:\n");   
+    printf("queryNO prefix:%s \n", prefix);   
+    //sprintf(prefix, "%lld\0", prefixint);
+    //TextOut(0, 5, ALIGN_LEFT, prefix);
+    memcpy(queryNo,prefix,11);
+    ret = Input(0,5,queryNo,17,IME_NUMBER,WHITE, RED,FALSE,TRUE,FALSE);
+    if(ret != OK)
+        return;
+    //memcpy(queryNo,prefix,11);
+    //memcpy(queryNo+11,hmno,6);
+    printf("queryNo:%s\n",queryNo);
+    ret = createrefund((void*)&commTestOut,queryNo,"0"); //refund all
+    
+START_PRINT:
+        pthread_mutex_lock(&prmutex);
+        if(CheckPrinter() != TRUE) {
+            printf("the printer is not working well!\n");
+            pthread_mutex_unlock(&prmutex);
+            goto end1;
+        }
+        ClearPrintBuff();
+        memset(PrintBuff,0,30);
+        SetPrintIndent(100);
+        SetPrintFont(32);
+        strcpy(PrintBuff,"退款成功");
+        FillPrintBuff(PrintBuff);
+        strcpy(PrintBuff,"序列号:");
+        strcat(PrintBuff,queryNo);
+        strcpy(PrintBuff,"交易时间：");
+        strcat(PrintBuff, serial2date(queryNo));
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"商户订单号:");
+        strcat(PrintBuff,commTestOut.out_trade_no);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"金额：");
+        strcat(PrintBuff, commTestOut.total_fee);
+        FillPrintBuff(PrintBuff);
+        PrintEmptyLine(2);	 
+        ret =StartPrint();
+        pthread_mutex_unlock(&prmutex);
+        DebugOut("print error code:[%d]\n", ret);
+        if(ret != 0)
+        {   
+            if(ret == -1) 
+                goto START_PRINT;
+            else if(ret == -2) 
+                goto end2;
+            else if(ret == -3) 
+                goto end1;
+        }   
+        goto normal;
+end1:  
+
+        FailBeep(); 
+        ClearLine(1, 9);
+        TextOut(0, 3, ALIGN_CENTER, "请检查打印机"); 
+        TextOut(0, 4, ALIGN_CENTER, "打印失败");
+        WaitKey(2000);
+
+        return ERROR;
+end2:  
+
+        FailBeep(); 
+        ClearLine(1, 9);
+        TextOut(0, 3, ALIGN_CENTER, "电量不足"); 
+        TextOut(0, 4, ALIGN_CENTER, "无法执行打印");
+        WaitKey(2000);
+
+        return ERROR;
+normal:
+}
+
+void qrexchange(void)
+{
+    int ret = 0, i;
+    T_DATETIME tTime;
+    char PrintBuff[100];
+    char order_time[23] = {0};
+    GetDateTime(&tTime);
+    sprintf(order_time, "%s%s-%s-%s|%s:%s:%s", 
+            tTime.century, tTime.year, tTime.month, tTime.day,
+            tTime.hour, tTime.minute, tTime.second);
+    Clear();
+    TextOut(0, 3, ALIGN_LEFT, "签到");
+    ret = preImsi((void*)&commTestOut,ALI_EXCHANGE);
+    printf("return qrexchange preImsi\n");
+    
+START_PRINT:
+        pthread_mutex_lock(&prmutex);
+        if(CheckPrinter() != TRUE) {
+            printf("the printer is not working well!\n");
+            pthread_mutex_unlock(&prmutex);
+            goto end1;
+        }
+        ClearPrintBuff();
+        memset(PrintBuff,0,30);
+        SetPrintIndent(100);
+        SetPrintFont(32);
+        strcpy(PrintBuff,"签到成功");
+        FillPrintBuff(PrintBuff);
+        strcpy(PrintBuff,"起始时间:");
+        FillPrintBuff(PrintBuff);
+        strcpy(PrintBuff,order_time);
+        FillPrintBuff(PrintBuff);
+        PrintEmptyLine(3);	 
+        ret =StartPrint();
+        pthread_mutex_unlock(&prmutex);
+        DebugOut("print error code:[%d]\n", ret);
+        if(ret != 0)
+        {   
+            if(ret == -1) 
+                goto START_PRINT;
+            else if(ret == -2) 
+                goto end2;
+            else if(ret == -3) 
+                goto end1;
+        }   
+        goto normal;
+end1:  
+
+        FailBeep(); 
+        ClearLine(1, 9);
+        TextOut(0, 3, ALIGN_CENTER, "请检查打印机"); 
+        TextOut(0, 4, ALIGN_CENTER, "打印失败");
+        WaitKey(2000);
+
+        return ERROR;
+end2:  
+
+        FailBeep(); 
+        ClearLine(1, 9);
+        TextOut(0, 3, ALIGN_CENTER, "电量不足"); 
+        TextOut(0, 4, ALIGN_CENTER, "无法执行打印");
+        WaitKey(2000);
+
+        return ERROR;
+normal:
+}
+
+int qrexchangedorder(void)
+{
+    int ret = 0, i;
+    int trade_num;
+    char trade_numstr[64] = {0};
+    char *trade_ptr[2000] = {NULL}; 
+    char *trade_detail[5] = {NULL}; 
+    char pos_date[12];
+    char pos_time[12];
+    T_DATETIME tTime;
+    struct receipt_info pos_receipt;
+    char PrintBuff[100];
+    unsigned int total24h_fee = 0;
+    char total24h_feestr[16] = {0};
+    Clear();
+    TextOut(0, 3, ALIGN_LEFT, "结算（签退）");
+    //ret = alipay_query_24h(result24h);
+    ret = preImsi((void*)&commTestOut,ALI_QUERY_24H);
+    strcpy(result24h,commTestOut.order);
+
+    trade_num = SplitStr(result24h,trade_ptr,"|");
+
+    pthread_mutex_lock(&prmutex);
+START_PRINT:
+    if(CheckPrinter() != TRUE) {
+        printf("the printer is not working well!\n");
+        pthread_mutex_unlock(&prmutex);
+        goto end1;
+    }
+    ClearPrintBuff();
+    memset(PrintBuff,0,sizeof(PrintBuff));
+    SetPrintIndent(0);
+    SetPrintFont(24);
+
+#ifdef RECEIPT_CONF
+    strcpy(PrintBuff,gRCP.rcp_title_company);
+#else
+    strcpy(PrintBuff,"北京金湖餐饮有限公司金湖环贸店");
+#endif
+ //   strcpy(PrintBuff,"查询近24小时成功交易");
+
+    FillPrintBuff(PrintBuff);	   
+
+    strcpy(PrintBuff,"签到时间：");
+    strcat(PrintBuff,commTestOut.exchange_start_time);
+    FillPrintBuff(PrintBuff);
+    strcpy(PrintBuff,"签退时间：");
+    strcat(PrintBuff,commTestOut.exchange_end_time);
+    FillPrintBuff(PrintBuff);
+    PrintEmptyLine(1);	 
+    strcpy(PrintBuff,"------------------");
+    FillPrintBuff(PrintBuff);
+
+    ret = StartPrint();
+    DebugOut("print error code:[%d]\n", ret);
+    if(ret != 0) {   
+        if(ret == -1)
+            goto START_PRINT;
+        else if(ret == -2)
+            goto end2;
+        else if(ret == -3)
+            goto end1;
+    }
+    ClearPrintBuff();
+    memset(PrintBuff,0,sizeof(PrintBuff));
+    SetPrintIndent(0);
+    SetPrintFont(24);
+
+    for (i=0; i<trade_num; i++){
+        printf("number %d trade:%s\n",i,trade_ptr[i]);
+        SplitStr(trade_ptr[i],trade_detail,",");
+        memset(pos_receipt.serial_number,0,24);
+        memset(pos_receipt.out_trade_no,0,16);
+        memset(pos_receipt.trade_no,0,32);
+        memset(pos_receipt.total_fee,0,16);
+
+        strcpy(pos_receipt.serial_number,trade_detail[0]);
+        strcpy(pos_receipt.out_trade_no,trade_detail[1]);
+        strcpy(pos_receipt.trade_no,trade_detail[2]);
+        strcpy(pos_receipt.total_fee,trade_detail[3]);
+
+        total24h_fee += Money2int(trade_detail[3]);
+
+        printf("total24h_fee:%d", total24h_fee);
+        strcpy(PrintBuff,"时间：");
+        strcat(PrintBuff, serial2date(pos_receipt.serial_number));
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"序列号：");
+        strcat(PrintBuff, pos_receipt.serial_number);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"商户订单号：");
+        strcat(PrintBuff, pos_receipt.out_trade_no);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"交易号：");
+        strcat(PrintBuff,  pos_receipt.trade_no);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"金额：");
+        strcat(PrintBuff, pos_receipt.total_fee);
+        FillPrintBuff(PrintBuff);	   
+        strcpy(PrintBuff,"------------------");
+        FillPrintBuff(PrintBuff);
+        if(i%5 == 0)  {
+            //because of FillPrintBuff may overflow so print segmentlly
+            ret = StartPrint();
+            DebugOut("print error code:[%d]\n", ret);
+            if(ret != 0) {   
+                if(ret == -1) 
+                    goto START_PRINT;
+                else if(ret == -2)
+                    goto end2;
+                else if(ret == -3)
+                    goto end1;
+            }
+            ClearPrintBuff();
+            memset(PrintBuff,0,sizeof(PrintBuff));
+            SetPrintIndent(0);
+            SetPrintFont(24);
+        }
+    }
+    
+    strcpy(PrintBuff,"=====================");
+    FillPrintBuff(PrintBuff);
+    ret = StartPrint();
+    DebugOut("print error code:[%d]\n", ret);
+    printf("print error code:[%d]\n", ret);
+    if(ret != 0) {   
+        if(ret == -1)
+            goto START_PRINT;
+        else if(ret == -2)
+             goto end2;
+        else if(ret == -3)
+             goto end1;
+    }
+    ClearPrintBuff();
+    memset(PrintBuff,0,sizeof(PrintBuff));
+    SetPrintIndent(0);
+    SetPrintFont(32);
+
+    sprintf(total24h_feestr,"%d", total24h_fee);
+    printf("\nbefore:%s\n", total24h_feestr);
+    Moneyformat(total24h_feestr);
+    printf("\nafter:%s\n", total24h_feestr);
+    printf("total24h_feestr:%s", total24h_feestr);
+    strcpy(PrintBuff,"总金额：");
+    strcat(PrintBuff, total24h_feestr);
+    FillPrintBuff(PrintBuff);	   
+    //memset(PrintBuff,0,sizeof(PrintBuff));
+    sprintf(trade_numstr, "总单数:%d", trade_num);
+    strcpy(PrintBuff, trade_numstr);
+    FillPrintBuff(PrintBuff);	   
+    PrintEmptyLine(3);	 
+    ret = StartPrint();
+    pthread_mutex_unlock(&prmutex);
+    DebugOut("print error code:[%d]\n", ret);
+    if(ret != 0) 
+    {
+        if(ret == -1)
+            goto START_PRINT;
+        else if(ret == -2)
+             goto end2;
+        else if(ret == -3)
+             goto end1;
+    }   
+    goto normal;
+end1:  
+    FailBeep(); 
+    ClearLine(1, 9);
+    TextOut(0, 3, ALIGN_CENTER, "请检查打印机"); 
+    TextOut(0, 4, ALIGN_CENTER, "打印失败");
+    WaitKey(2000);
+    
+    return ERROR;
+end2:  
+
+        FailBeep(); 
+        ClearLine(1, 9);
+        TextOut(0, 3, ALIGN_CENTER, "电量不足"); 
+        TextOut(0, 4, ALIGN_CENTER, "无法执行打印"); 
+        WaitKey(2000);
+
+        return ERROR;
+
+normal:
+}
 
 void query24h(void)
 {
@@ -1345,6 +1708,8 @@ void query24h(void)
     Clear();
     TextOut(0, 3, ALIGN_LEFT, "查询近24小时成功交易");
     //ret = alipay_query_24h(result24h);
+    ret = preImsi((void*)&commTestOut,ALI_QUERY_24H);
+    strcpy(result24h,commTestOut.order);
 
     trade_num = SplitStr(result24h,trade_ptr,"|");
 

@@ -59,8 +59,9 @@ int alipay_precreate(char* precr, int* len, struct payInfo* order_info,int type)
 
     strcpy(encrypt,common);
     strcat(encrypt,"#");
-    if(!order_info->order_key)
-        strcpy(order_info->order_key,"11");
+	printf("order_info->order_key=%s,strlen:%d\n",order_info->order_key,strlen(order_info->order_key));
+    if(strlen(order_info->order_key) <= 0)
+        strcpy(order_info->order_key,ORDERKEY);
     strcat(encrypt,order_info->order_key);
 	printf("\nMD5 input:encrypt=%s\n", encrypt);
 
