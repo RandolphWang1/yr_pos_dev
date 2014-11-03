@@ -204,7 +204,7 @@ int main(void)
                 nbytes = read(pipe_fd, buffer, 30);
                 if(nbytes > 0 || strncmp(buffer,"START",5) == 0) {
                     syslog(LOG_INFO,"Get START Trigger From Main Server!\n"); 
-                    query_count = 10;
+                    query_count = 60;
                     alarm(10);
                 }
 #else 

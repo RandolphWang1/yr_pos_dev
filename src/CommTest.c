@@ -864,7 +864,7 @@ START_PRINT:
     SetPrintFont(24);
     strcpy(printBuff,"     联系电话：4008190900");
     FillPrintBuff(printBuff);
-    PrintEmptyLine(2);
+    PrintEmptyLine(4);
 
     
 
