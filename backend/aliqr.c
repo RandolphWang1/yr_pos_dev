@@ -68,11 +68,11 @@ int alipay_precreatebak(char* precr, int* len)
 }
 #endif
 #if 1
-char* jfserver = "182.92.186.90";
+char* jfserver = "182.92.8.2";
 int portnumber = 8080;
 #else
-char* jfserver = "192.168.1.104";
-int portnumber = 8180;
+char* jfserver = "182.92.186.90";
+int portnumber = 8080;
 #endif
 
 char* IMSI = "123456789012345";
@@ -178,9 +178,9 @@ int alipay_query(char* precr, int* len, char* str_imsi)
         char hex_output[16*2 + 1];
         int di;
         if(time_mark[0]=='\0')
-        *len = sprintf(encrypt,"IMSI=%s&time_mark=%s#%s", str_imsi, str_timemark, jfkey);
+        *len = sprintf(encrypt,"i=%s&tm=%s#%s", str_imsi, str_timemark, jfkey);
         else
-        *len = sprintf(encrypt,"IMSI=%s&time_mark=%s#%s", str_imsi, time_mark, jfkey);
+        *len = sprintf(encrypt,"i=%s&tm=%s#%s", str_imsi, time_mark, jfkey);
         //printf("\nMD5 input:encrypt=%s", encrypt);
         syslog(LOG_INFO,"\nMD5 input:encrypt=%s", encrypt);
 
@@ -193,12 +193,12 @@ int alipay_query(char* precr, int* len, char* str_imsi)
         puts(hex_output);
 
         if(time_mark[0]=='\0')
-        *len = sprintf(encrypt1wokey,"IMSI=%s&time_mark=%s", str_imsi, str_timemark);
+        *len = sprintf(encrypt1wokey,"i=%s&tm=%s", str_imsi, str_timemark);
         else
-        *len = sprintf(encrypt1wokey,"IMSI=%s&time_mark=%s", str_imsi, time_mark);
+        *len = sprintf(encrypt1wokey,"i=%s&tm=%s", str_imsi, time_mark);
         //*len = sprintf(https,"http://192.168.1.104:8180/qrcode/preorder/?IMSI=123456789012345&serial_number=12&total_fee=0.01&subject=ccc&order_time=2014-08-0211:21:20");
         //*len = sprintf(https,"http://%s:%d/qrcode/preorder/?IMSI=%s&serial_number=%d&total_fee=%d&subject=%s&order_time=%s", jfserver, portnumber, IMSI, serial_number, jftotal_fee, jfsubject, order_time);
-        *len = sprintf(https,"http://%s:%d/qrcode/query/?%s&sign=%s",jfserver, portnumber, encrypt1wokey, hex_output);
+        *len = sprintf(https,"http://%s:%d/qrcode/q/?%s&sign=%s",jfserver, portnumber, encrypt1wokey, hex_output);
         puts(https);
         memset(precr, 0, *len+1);
         memcpy(precr, https, *len);
