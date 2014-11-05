@@ -94,7 +94,7 @@ int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
 #if 1
     /* Time for D620D Pos */
     GetDateTime(&tTime);
-    if(query_number == 0) { //if query_number != 0 then time will nto changed, bug
+    //if(query_number == 0) { //if query_number != 0 then time will nto changed, bug
         sprintf(ticket_number,"%s%s%s%s%s00",tTime.year,tTime.month,tTime.day,tTime.hour,tTime.minute);
         //sprintf(ticket_number,"%s%s%s%s%s00","14","10","10","10","10");
         /* use last 4-bit of IMSI */
@@ -108,7 +108,7 @@ int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
             query_number_idx = 1;
             old_query_number = query_number/100; 
         }
-    }
+    //}
 
     qrpay_info.order_number = query_number;
 #endif
@@ -232,11 +232,8 @@ void getIMSIconfig()
     FILE *fp;
     int i;
     char buffer[30];
-#if 1
-    strcpy(qrpay_info.imsi,"123456789012345");
-    //strcpy(qrpay_info.imsi,"460024104033474");
-#else
     if (pos_imsi[0] == '\0'){
+
         /* get imsi from config.tx */
         fp = fopen("/usr/local/config.txt","r");
         if(fp == NULL)
@@ -262,7 +259,6 @@ void getIMSIconfig()
         printf("the pos imsi buffer string is %s\n",pos_imsi);
     }
     strcpy(qrpay_info.imsi,pos_imsi);
-#endif
 }
 #if 0
 
