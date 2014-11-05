@@ -5,6 +5,10 @@
 
 #include <stdarg.h>
 
+#ifdef ALIPAY_FIFO
+#include <fcntl.h>
+#include <syslog.h>
+#endif
 BOOL iScanHandle;
 #define ALIPAY_QUERY 1
 #ifdef ALIPAY_QUERY
@@ -17,6 +21,9 @@ struct sockaddr_un address;
 #endif
 
 
+#ifdef ALIPAY_FIFO
+int pipe_fd;
+#endif
 int _strcmp(char *str1,char *str2)
 {
         int len1,len2;
@@ -69,6 +76,11 @@ int main()
         int j = 0;
         int nRetAttach = 0;
 	//int k = 10;
+#ifdef ALIPAY_FIFO
+        const char *fifo_name = "/tmp/alipay_fifo";
+        int res = 0;
+        const int open_mode = O_WRONLY;
+#endif
 
 	//初始化硬件
     	if(InitPOS() != OK)  
@@ -114,6 +126,24 @@ FUNC:
     }
 #endif
 
+#ifdef ALIPAY_FIFO
+    if(access(fifo_name, F_OK) == -1)  
+    {  
+        //管道文件不存在  
+        //创建命名管道  
+        res = mkfifo(fifo_name, 0777);  
+        if(res != 0)  
+        {  
+            syslog(LOG_ERR, "Could not create fifo %s\n", fifo_name);  
+            return 1;  
+        }  
+    }  
+    pipe_fd = open(fifo_name, open_mode); 
+    if (pipe_fd == -1) {
+        syslog(LOG_ERR,"APP: Couldn't open /tmp/alipay_fifo\n");
+        return 1;
+    }
+#endif
 	ClearKbd();
 	display_y = 10;
         while(1)
@@ -121,6 +151,9 @@ FUNC:
                 printf("$$$$Main inside while loop$$$\n");
                                 SetCommParam();
         }
+#ifdef ALIPAY_FIFO
+       close(pipe_fd);
+#endif
 }
 
 

@@ -16,6 +16,9 @@ extern struct sockaddr_un address;
 extern void showVersion(void);
 extern void Update_YRJT_Image(void);
 extern upload_debug_log(void);
+#ifdef ALIPAY_FIFO
+extern int pipe_fd;
+#endif
 
 
 void refund(void);
@@ -779,6 +782,10 @@ int SetMoney()
         printTail(buff,commTestOut.out_trade_no);
     }
     pthread_mutex_unlock(&prmutex);
+    /* send trigger to query_server to start timer */
+#ifdef ALIPAY_FIFO
+    write(pipe_fd, "START", 6);
+#endif
     WaitKey(1000);
     return OK;
 
@@ -873,7 +880,7 @@ START_PRINT:
     SetPrintFont(24);
     strcpy(printBuff,"     联系电话：4008190900");
     FillPrintBuff(printBuff);
-    PrintEmptyLine(2);
+    PrintEmptyLine(4);
 
     
 

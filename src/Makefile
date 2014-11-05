@@ -63,7 +63,7 @@ fota_all:D620D
 	rm -f *.o *bak	
 
 %.o:%.c
-	$(CC) $(CFLAGS) -DRECEIPT_CONF -DREFUND_EN -c -Wall $< -o $@
+	$(CC) $(CFLAGS) -DALIPAY_FIFO -DRECEIPT_CONF -DREFUND_EN -c -Wall $< -o $@
 
 clean:
 	rm -f *.o *bak
