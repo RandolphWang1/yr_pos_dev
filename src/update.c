@@ -3,12 +3,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define TMP_DESC_PATH "/tmp/desc_8888.txt"
 #define TMP_MD5_FILE "/tmp/md5_8888.txt"
 #define PKG_DEST_PATH "/usr/local/tmp.tar.gz"
-#define DOWNLOAD_DESC_SCRIPT "/usr/local/D620D/download_desc.txt"
+#define PKG_MD5_PATH "/tmp/pkg_md5.txt"
 #define DOWNLOAD_PKG_SCRIPT "/usr/local/D620D/download_update.txt"
+#define DOWNLOAD_PKG_DESC "/usr/local/D620D/download_desc.txt"
 #define DEL_TMP_SCRIPT "/usr/local/D620D/removeTmpFile.txt"
+#define UPLOAD_LOG_SCRIPT "/usr/local/D620D/upload_log.txt"
+
+char *local_md5=NULL;
+char package_md5[33] = {0};
+#define MD5_FILE_PATH "/usr/local/D620D/local_md5.txt"
 
 /*This info is saved in the update.txt of sever*/
 typedef struct update_zip_info{
@@ -18,13 +23,13 @@ typedef struct update_zip_info{
 }update_zip_info_t;
 
 
-#define BUF_LEN 100
+#define BUF_LEN 120
 char *buf=NULL;
 
-
+extern char *getIMSIconfig();
 extern char *get_yrjt_ver(void);
 
-static void inline safe_free_mem(void **p)
+void inline safe_free_mem(void **p)
 {
     if(*p){
         free(*p);
@@ -46,14 +51,7 @@ void showVersion(void)
 	return;
 }
 
-void upload_debug_log(void)
-{
 
-}
-char* get_update_ver(update_zip_info_t *info)
-{
-	return info->ver;
-}
 
 int exec_cmds(char *path)
 {
@@ -95,6 +93,34 @@ int exec_cmds(char *path)
     return ret;
 }
 
+int update_md5_to_config(update_zip_info_t *info)
+{
+        FILE *fp;
+        fp = fopen(PKG_MD5_PATH,"r");
+        if(fp == 0){
+            syslog(LOG_ERR,"open %s fail",PKG_MD5_PATH);
+            return NULL;
+        }
+        
+        while(fgets(buf,BUF_LEN, fp) != NULL){
+            int i = 0;
+            char *p = NULL;
+
+            p = strstr(buf,"<m>");
+            if(p){
+                syslog(LOG_INFO,"find the package md5 string of %s\n",getenv("IMSI"));
+                strncpy(package_md5,p+3,32);
+                syslog(LOG_INFO,"The md5 string is:%s\n",package_md5);
+            }
+
+            info->md5 = package_md5;
+                 
+        } 
+        fclose(fp);
+    
+        return 0;
+}
+
 
 int debug_download_process(void)
 {
@@ -107,112 +133,119 @@ int debug_download_process(void)
 	return 0;
 }
 
-int download_desc_file(char *buf)
+int get_desc(char *buf)
 {
-    int ret;
-    ret = setenv("TMP_DESC_PATH",TMP_DESC_PATH,1);
-        if(ret != 0){
-           syslog(LOG_INFO,"setenv fail.err=%s",strerror(errno));
-           }
-    syslog(LOG_INFO,"TMP_DESC_PATH=%s",getenv("TMP_DESC_PATH"));
-    ret = exec_cmds(DOWNLOAD_DESC_SCRIPT);
-    return ret;
+    return 0;
 }
 
-int parse_desc_file(char *buf,update_zip_info_t *info)
+int parse_desc(char *buf,update_zip_info_t *info)
 {
-    FILE *fp;
-    int line = 0;
-    syslog(LOG_INFO,"parse file begin %s",TMP_DESC_PATH);
-
-    fp = fopen(TMP_DESC_PATH,"r");
-    if(fp == 0){
-        syslog(LOG_ERR,"open %s fail",TMP_DESC_PATH);
-        return -1;
-    }   
-    /*
-    The update.txt file templete. Don't change it.
-
-    version:master_2014-10-21_14:13
-    md5sum:281cf44d85e61f592686d7ac84398961
-    filename:D620D.tar.gz
-    */
-    
-    while(fgets(buf,BUF_LEN, fp) != NULL){
-        int i,line_len; 
-        char *p;
-        line_len=strlen(buf);
-        syslog(LOG_INFO,"line=%d len=%d str=%s", line++,line_len,buf);
-        for(i=0;i<line_len;i++)
-            if(buf[i] == ':')break;
-        buf[i] = '\0';
-            
-        p=&buf[i+1];
-        
-        if(strcmp("version",buf) == 0){
-            int len = strlen(p);
-            char *p_tmp=malloc(len);
-            memcpy(p_tmp,p,len);
-            *(p_tmp+len-1) = '\0';
-
-            info->ver=p_tmp;        
-        }
-
-
-        if(strcmp("filename",buf) == 0){
-            int len = strlen(p);
-            char *p_tmp=malloc(len);
-            memcpy(p_tmp,p,len);        
-            *(p_tmp+len-1) = '\0'; 
-            
-            info->filename=p_tmp;
-        }
-
-        if(strcmp("md5sum",buf) == 0){
-            int len = strlen(p);
-            char *p_tmp = malloc(len);
-            memcpy(p_tmp,p,len); 
-            *(p_tmp+len-1) = '\0';      
-
-            info->md5=p_tmp;
-        }
-
-    }
-    fclose(fp); 
-
-    syslog(LOG_INFO,"parse file end");
-    return 0;
+    //info->md5 = "628acc3f29cc4accecbb47642418333c";
+    int ret;
+    syslog(LOG_INFO,"IMSI=%s",getIMSIconfig());
+    setenv("IMSI",getIMSIconfig(),1);
+    syslog(LOG_INFO,"echo $IMSI=%s",getenv("IMSI"));
+    setenv("PKG_MD5_PATH",PKG_MD5_PATH,1); 
+    syslog(LOG_INFO,"echo $PKG_MD5_PATH=%s",getenv("PKG_MD5_PATH"));
+    ret = exec_cmds(DOWNLOAD_PKG_DESC);
+    if(ret!= 0)
+        return ret;
+    ret = update_md5_to_config(info);
+    info->ver = "master";
+    printf("parse_desc:%s:%s\n", info->ver, info->md5);
+    return ret;
 }
 
 
 int prepare_update_process(update_zip_info_t *info)
 {
-    FILE *fp;
-    setenv("SRV_PKG_NAME",info->filename,1);
-    syslog(LOG_INFO,"echo $SRV_PKG_NAME=%s",getenv("SRV_PKG_NAME"));
-    
-    memset(buf,0,BUF_LEN);
-    fp = fopen(TMP_MD5_FILE,"w");
-    sprintf(buf,"%s  %s",info->md5,PKG_DEST_PATH);
-    fwrite(buf,strlen(buf),1,fp);
-    fclose(fp);
+    setenv("NEW_MD5",info->md5,1);
+    syslog(LOG_INFO,"echo $NEW_MD5=%s",getenv("NEW_MD5"));
     
     setenv("PKG_DEST_PATH",PKG_DEST_PATH,1); 
     syslog(LOG_INFO,"echo $PKG_DEST_PATH=%s",getenv("PKG_DEST_PATH"));
-	setenv("TMP_MD5_FILE",TMP_MD5_FILE,1);
+
+    setenv("TMP_MD5_FILE",TMP_MD5_FILE,1);
     syslog(LOG_INFO,"echo $TMP_MD5_FILE=%s",getenv("TMP_MD5_FILE"));
     return 0;
 }
 
 int download_Update_Pkg(update_zip_info_t *info)
 {
-    return exec_cmds(DOWNLOAD_PKG_SCRIPT);
+    int ret = exec_cmds(DOWNLOAD_PKG_SCRIPT);
+    //ret = update_md5_to_config(info);
+    return ret;
 }
 
 
 int removeTmpFile(void)
 {
     return exec_cmds(DEL_TMP_SCRIPT);
+}
+
+
+char *get_local_md5(void)
+{
+    if(local_md5 ==NULL){
+        FILE *fp;
+        fp = fopen(MD5_FILE_PATH,"r");
+        if(fp == 0){
+            syslog(LOG_ERR,"open %s fail",MD5_FILE_PATH);
+            return NULL;
+        }
+        
+        while(fgets(buf,BUF_LEN, fp) != NULL){
+            int i = 0;
+            char *p;
+            if(buf[0] == '#')
+                continue;
+
+            if(strncmp("md5:",buf,4) == 0)
+                continue;
+
+            p = &buf[4];
+            for(i=0;i<32;i++)
+                {
+                if(((*p)>='0' && (*p<='9')) || \
+                    ((*p>='a') && (*p <= 'f')))
+                    {
+                    p++;
+                    continue;
+                    }
+                else
+                    break;
+                }
+            
+            if(i == 32){
+                //md5 is ok,save it and jump out the loop
+                //md5 is 128bit, 32 char + 1 end
+                local_md5 = malloc(33);
+                memset(local_md5,0,33);
+                memcpy(local_md5,&buf[4],32);
+                syslog(LOG_INFO,"detect md5=%s",local_md5);
+                break;
+            }
+            //if md5 is not right, go on to look for...        
+        }
+        
+        fclose(fp);
+    }
+    
+    return local_md5;
+}
+
+BOOL is_need_update(update_zip_info_t *info)
+{
+    if((get_local_md5()==NULL) ||(get_yrjt_ver()==NULL) \
+        || info->ver ==NULL || info->md5 == NULL){
+        return TRUE;
+    }
+    
+    if((strcmp(get_yrjt_ver(),info->ver) == 0) && \
+        (strcmp(get_local_md5(),info->md5) == 0))
+        return FALSE;
+    else
+        return TRUE;
 }
 
 void Update_YRJT_Image(void)
@@ -227,12 +260,13 @@ void Update_YRJT_Image(void)
     memset(buf,0,BUF_LEN);
    
 	info.ver = NULL;
-	info.filename = NULL;
+	info.filename = NULL;// not need
 	info.md5 = NULL; 
 	//download description file
 	Clear();
 	TextOut(0, 3, ALIGN_CENTER,"获取更新信息");
-    ret = download_desc_file(buf);
+    
+    ret = get_desc(buf);
     if(ret != 0){
         TextOut(0, 4, ALIGN_CENTER,"获取更新信息失败");
         TextOut(0, 5, ALIGN_CENTER,"请检查网络");
@@ -240,7 +274,7 @@ void Update_YRJT_Image(void)
 		goto out;
     }
     //parse description file
-    ret = parse_desc_file(buf,&info);
+    ret = parse_desc(buf,&info);
 	if(ret != 0){
         TextOut(0, 4, ALIGN_CENTER, "获取更新信息失败");
         TextOut(0, 5, ALIGN_CENTER, "请重新尝试");
@@ -249,8 +283,9 @@ void Update_YRJT_Image(void)
     }
 
 
+    printf("before is_need_update\n");
     //check the version
-	if(strcmp(get_yrjt_ver(),get_update_ver(&info)) == 0){
+    if(FALSE == is_need_update(&info)){
 		TextOut(0, 4, ALIGN_CENTER, "当前版本已是最新");	
 		stop_to_show_notification();
 		/*
@@ -259,11 +294,15 @@ void Update_YRJT_Image(void)
 		*/
 		goto out;
 	}
+    printf("after is_need_update\n");
 	//prepare download update package
+	TextOut(0, 4, ALIGN_CENTER, "准备更新版本");
     ret = prepare_update_process(&info);
     //download update package
-	TextOut(0, 4, ALIGN_CENTER, "正在更新...");
+    printf("after prepare_update_process\n");
+	TextOut(0, 5, ALIGN_CENTER, "正在更新...");
 	ret = download_Update_Pkg(&info);
+    printf("after download_Update_Pkg\n");
 	if(ret != 0){
 		syslog(LOG_ERR,"download file fail. ret=%d.",ret);
 		goto out;
@@ -279,6 +318,7 @@ void Update_YRJT_Image(void)
 	}
 
 out:
+    printf("error out\n");
 	removeTmpFile();
     safe_free_mem((void*)&buf);
     safe_free_mem((void*)&info.ver);
@@ -287,6 +327,47 @@ out:
 
     syslog(LOG_INFO,"exit Update_YRJT_Image");
 	return;
+}
+
+//upload log function
+int prepar_upload(void)
+{
+    //generate the tgz file name, which will be upload later.
+    //tgz_filename = imsi + time.gz
+#if 0
+    char buf[100];
+    T_DATETIME tTime;
+    sprintf(buf,"%s_")
+    GetDateTime(T_DATETIME * ptTime)(&tTime);
+    sprintf(pos_date,"%s%s-%s-%s",tTime.century,tTime.year,tTime.month,tTime.day);
+    sprintf(pos_time,"%s:%s:%s",tTime.hour,tTime.minute,tTime.second);
+#endif
+    char *tgz_filename=getIMSIconfig();//FIXME, add time later.
+    setenv("LOG_NAME",tgz_filename,1);
+    syslog(LOG_INFO,"echo $LOG_NAME=%s",getenv("LOG_NAME"));
+    return 0;
+}
+
+int upload_log(void)
+{
+    return exec_cmds(UPLOAD_LOG_SCRIPT);
+}
+
+void upload_debug_log(void)
+{
+    int ret;
+	TextOut(0, 3, ALIGN_CENTER, "准备上传");
+    ret = prepar_upload();
+    if(ret != 0){
+        syslog(LOG_ERR,"prepare upload debug log fail.");
+	}
+    ret = upload_log();
+	if(ret != 0){
+		TextOut(0, 4, ALIGN_CENTER, "上传失败");
+        syslog(LOG_ERR,"upload debug log fail.");
+	}else{
+		TextOut(0, 4, ALIGN_CENTER, "上传成功");
+	}
 }
 
 

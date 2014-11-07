@@ -51,7 +51,7 @@ YRJT_OUT:D620D
 	rm -f *.o *bak
 
 fota:D620D
-	tar zcvf tmp.tgz D620D/D620D D620D/download_desc.txt D620D/download_update.txt D620D/removeTmpFile.txt local.sh
+	tar zcvf tmp.tgz D620D/D620D local.sh D620D/* 
 	rm -f ../$(BRANCH_NAME)*
 	mv ./tmp.tgz ../$(FOTA_PKG_NAME)
 	rm -f *.o *bak

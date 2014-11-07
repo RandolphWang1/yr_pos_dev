@@ -1,2 +1,2 @@
 rm -f $TMP_MD5_FILE
-rm -f $TMP_DESC_FILE
+rm -f $PKG_MD5_PATH

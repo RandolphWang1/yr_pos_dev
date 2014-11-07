@@ -1,0 +1,5 @@
+tar zcvf /usr/local/$(LOG_NAME) /var/log/message
+#curl –u name:passwd -T size.mp3 ftp://www.xxx.com/mp3/
+/usr/local/curl -u www:1e846c765 -T /usr/local/$(LOG_NAME) ftp://182.92.8.2
+rm -f /usr/local/$(LOG_NAME)
+
