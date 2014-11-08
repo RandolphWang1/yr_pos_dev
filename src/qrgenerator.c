@@ -14,7 +14,10 @@ char pos_imsi[20];
 void getIMSIconfig();
 char szQrcodeString[QRRESULT] = {0};
 
-char* subject = "Alipay";
+//char* subject = "Alipay";
+char subject[128+1] = {0};
+char* defaultsubject = "AliPay";
+int getsubject(char* name,char* buf);
 #if 0
 int main(int argc, char** argv)
 {
@@ -118,8 +121,16 @@ int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
     memset(qrpay_info.order_subject,0, sizeof(qrpay_info.order_subject));
     if(in && strlen(in->order_subject) > 0)
         strcpy(qrpay_info.order_subject,in->order_subject);
-    else
-        strcpy(qrpay_info.order_subject,subject);
+    else {
+        int subjectlen = 0;
+        subjectlen = getsubject("/usr/local/subject.txt",subject);
+        if(subjectlen > 0 ) {
+            printf("subject:%d:%s",subjectlen,subject);
+            strncpy(qrpay_info.order_subject,subject,subjectlen);
+        }else{
+            strcpy(qrpay_info.order_subject,defaultsubject);
+        }
+    }
     //strcpy(qrpay_info.order_subject,"%E5%88%86%E8%B4%A6%E6%B5%8B%E8%AF%95-sky");
 
     sprintf(order_time, "%s%s%s%s%s%s%s", 
@@ -227,6 +238,23 @@ void getSNoPre(char* prefix_str)
             ticket_number, client_number, prefix_str);
 }
 #endif
+
+int getsubject(char* name,char* buf)
+{
+    FILE* fp = NULL;
+    int len = 0;
+    fp = fopen(name,"r");
+    if(fp == NULL) {
+        printf("couldn't open config.txt\n");
+        return 0; 
+    }
+    
+    fread(buf, sizeof(qrpay_info.order_subject),1,fp);
+    printf("%d,%s\n",strlen(buf),buf);
+    fclose(fp);
+    return strlen(buf)-1;
+}
+
 void getIMSIconfig()
 {
     FILE *fp;

@@ -33,6 +33,7 @@ unsigned int Money2int(char* buf);
 void print_logo();
 void query24h(void);
 char result24h[QRRESULT] = {0};
+int SetReceiptInfo();
 #ifdef ALIPAY_QUERY
 extern unsigned long long query_number; 
 extern char qrout_trade_no[];
@@ -54,7 +55,7 @@ int SplitStr(char *buff, char *parr[], char *token)
         return i;
 }
 #endif
-
+#if 0
 static int SetModem()
 {
 	int ret;
@@ -521,6 +522,7 @@ int ViewIpSet()
 	}
 	return OK;
 }
+#endif
 
 
 
@@ -563,29 +565,21 @@ void SetCommParam()
         TextOutByPixel(45, 185, "3.日结");
 
         ShowBmpFile(170, 75, "pic/button.bmp");
-        TextOutByPixel(185, 80, "5.签到");
+        TextOutByPixel(185, 80, "4.签到");
 
         ShowBmpFile(170, 110, "pic/button.bmp");
-        TextOutByPixel(185, 115, "6.结算签退");
+        TextOutByPixel(185, 115, "5.结算签退");
 
 #ifdef REFUND_EN
         ShowBmpFile(170, 145, "pic/button.bmp");
-        TextOutByPixel(185, 150, "7.退货");
+        TextOutByPixel(185, 150, "6.退货");
 #endif
 
         printf("go before SetCommParam WaitLimitKey\n");
 #ifdef REFUND_EN
-#ifdef RECEIPT_CONF
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x06\x07\x0a\x0d\x12", 11, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x06\x0a\x0d\x12", 10, 0);
 #else
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x05\x06\x07\x0a\x0d\x12", 10, 0);
-#endif
-#else
-#ifdef RECEIPT_CONF
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x0a\x0d\x12", 8, 0);
-#else
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x0a\x0d\x12", 7, 0);
-#endif
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x0a\x0d\x12", 9, 0);
 #endif
         printf("go after SetCommParam WaitLimitKey\n");
         memset(sKeyName, 0, sizeof(sKeyName));
@@ -633,39 +627,50 @@ void SetCommParam()
                 break;
                
 			case KEY_4:
-			#ifdef RECEIPT_CONF
-			    SetReceiptInfo();
-			#else	
-				SetCDMA();
-			#endif	
-				break;	
-            case KEY_5:
                 qrexchange();
                 break;
-			case KEY_6:
+            case KEY_5:
                 qrexchangedorder();
 				break;	
-			case KEY_7:
+			case KEY_6:
                 refund();
 				break;	
             case KEY_F1:
-				Clear();	
-				TextOutByPixel(105, 60, "1.当前版本");
-				TextOutByPixel(105, 80, "2.远程升级");
-				TextOutByPixel(105, 100, "3.上传故障信息");
-	            ucKey = WaitLimitKey("\x01\x02\x03\x12", 4, 0);
-	            if ('\x01' == ucKey)
-					showVersion();
-				
-	            if ('\x02' == ucKey)
-					Update_YRJT_Image();
-			
-	            if ('\x03' == ucKey)
-					upload_debug_log();
-				break;
+                Clear();
+                //TextOut(0, 0, ALIGN_CENTER, "IP 获取方式");
+                TextOut(0, 0, ALIGN_CENTER, "请谨慎使用在线更新服务");
+                TextOut(0, 1, ALIGN_CENTER, "盈润捷通支持电话：4008190900");
+
+				TextOut(0, 4, ALIGN_CENTER, "请按OK键继续");
+				TextOut(0, 5, ALIGN_CENTER, "按CANCEL键或者BACK键返回");
+				ucKey = WaitLimitKey("\x12\x0E\x0F", 3, 0);
+                if(ucKey == KEY_ENTER)
+                {
+                    Clear();	
+                    TextOutByPixel(105, 60, "1.当前版本");
+                    TextOutByPixel(105, 80, "2.远程升级");
+                    TextOutByPixel(105, 100, "3.上传故障信息");
+                    TextOutByPixel(105, 120, "4.设置抬头");
+                    ucKey = WaitLimitKey("\x01\x02\x03\x04\x12", 5, 0);
+                    if ('\x01' == ucKey)
+                        showVersion();
+
+                    if ('\x02' == ucKey)
+                        Update_YRJT_Image();
+
+                    if ('\x03' == ucKey)
+                        upload_debug_log();
+                    if ('\x04' == ucKey) {
+#ifdef RECEIPT_CONF
+                        SetReceiptInfo();
+#endif
+                    } 
+                } else if(ucKey == KEY_CANCEL || ucKey == KEY_BACKSPACE)
+                    return; 
+                        break;
             case KEY_F2:
-				JingZhenTest();
-				break;	
+                        JingZhenTest();
+                            break;	
 		}
 	}
 }
@@ -767,7 +772,7 @@ int SetMoney()
     //strcpy(commTestIn.order_subject,gRCP.rcp_title_company);
     //strcpy(commTestIn.order_subject,"北京金湖餐饮有限公司金湖环贸店");
     //strcpy(commTestIn.order_subject,"%E5%88%86%E8%B4%A6%E6%B5%8B%E8%AF%95-sky");
-    strcpy(commTestIn.order_subject,"AliPay");
+    //strcpy(commTestIn.order_subject,"AliPay");
     ret = generator_qrcode_to_bmp((void*)&commTestOut,buff,(void*)&commTestIn);
 	//system(buff);	 
 
