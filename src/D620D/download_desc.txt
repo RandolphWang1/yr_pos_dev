@@ -1,2 +1,0 @@
-#md5
-/usr/local/curl http://182.92.8.2:8080/qrcode/lastest/md5/?IMSI=$IMSI > $PKG_MD5_PATH
