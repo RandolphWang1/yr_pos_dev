@@ -29,6 +29,7 @@ void *thr_fn(void* arg);
 void printTail(char* price, char* out_trade_no);
 char* Moneyformat(char* buf);
 char* serial2date(char* serialNo);
+char* exchange2date(char* serialNo);
 unsigned int Money2int(char* buf);
 void print_logo();
 void query24h(void);
@@ -1619,10 +1620,10 @@ START_PRINT:
     FillPrintBuff(PrintBuff);	   
 
     strcpy(PrintBuff,"签到时间：");
-    strcat(PrintBuff,commTestOut.exchange_start_time);
+    strcat(PrintBuff,exchange2date(commTestOut.exchange_start_time));
     FillPrintBuff(PrintBuff);
     strcpy(PrintBuff,"签退时间：");
-    strcat(PrintBuff,commTestOut.exchange_end_time);
+    strcat(PrintBuff,exchange2date(commTestOut.exchange_end_time));
     FillPrintBuff(PrintBuff);
     PrintEmptyLine(1);	 
     strcpy(PrintBuff,"------------------");
@@ -1984,6 +1985,27 @@ char* serial2date(char* serialNo)
 
     Defualtdata[12] = serialNo[13];
     Defualtdata[13] = serialNo[14];
+    return ret;
+}
+
+//static char Defualtdata[] = "yy-mm-dd/hh:mm";
+char* exchange2date(char* serialNo)
+{
+    char* ret = &Defualtdata[0];
+    Defualtdata[0] = serialNo[2];
+    Defualtdata[1] = serialNo[3];
+
+    Defualtdata[3] = serialNo[4];
+    Defualtdata[4] = serialNo[5];
+
+    Defualtdata[6] = serialNo[6];
+    Defualtdata[7] = serialNo[7];
+
+    Defualtdata[9] = serialNo[8];
+    Defualtdata[10] = serialNo[9];
+
+    Defualtdata[12] = serialNo[10];
+    Defualtdata[13] = serialNo[11];
     return ret;
 }
 
