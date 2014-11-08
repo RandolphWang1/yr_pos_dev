@@ -222,8 +222,8 @@ BOOL is_need_update(update_zip_info_t *info)
         || info->ver ==NULL || info->md5 == NULL){
         return TRUE;
     }
-    
-    if((strcmp(get_yrjt_ver(),info->ver) == 0) && \
+    //!!!!! now because server always return v0.1 so only check md5, tmp solution by storm 20141108
+    if(/*(strcmp(get_yrjt_ver(),info->ver) == 0) && \*/
         (strcmp(get_local_md5(),info->md5) == 0))
         return FALSE;
     else
@@ -288,6 +288,10 @@ void Update_YRJT_Image(void)
     printf("after download_Update_Pkg\n");
 	if(ret != 0){
 		syslog(LOG_ERR,"download file fail. ret=%d.",ret);
+        Clear();
+        TextOut(0, 3, ALIGN_CENTER, "升级失败，请按任意键关机重启");
+        WaitKey(0);
+        ShutDown(); 
 		goto out;
 	}
 
@@ -309,10 +313,6 @@ out:
     safe_free_mem((void*)&buf);
     safe_free_mem((void*)&local_md5);
 
-    Clear();
-    TextOut(0, 3, ALIGN_CENTER, "升级失败，请按任意键关机重启");
-    WaitKey(0);
-    ShutDown(); 
 
     syslog(LOG_INFO,"exit Update_YRJT_Image");
 	return;
