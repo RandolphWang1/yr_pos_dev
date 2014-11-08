@@ -293,9 +293,11 @@ void Update_YRJT_Image(void)
 
 	//reboot
 	while(1)
-	{
-	Clear();
-	TextOut(0, 3, ALIGN_CENTER, "升级已完成，请关机重启");
+    {
+        Clear();
+        TextOut(0, 3, ALIGN_CENTER, "升级已完成，请按任意键关机重启");
+        WaitKey(0);
+        ShutDown(); 
 	//sleep(1);
 	//stop_to_show_notification();
 	}
@@ -303,10 +305,14 @@ void Update_YRJT_Image(void)
 out:
     printf("error out\n");
 	removeTmpFile();
+    printf("after removeTmpFile\n");
     safe_free_mem((void*)&buf);
-    safe_free_mem((void*)&info.ver);
-    safe_free_mem((void*)&info.filename);
-    safe_free_mem((void*)&info.md5);
+    safe_free_mem((void*)&local_md5);
+
+    Clear();
+    TextOut(0, 3, ALIGN_CENTER, "升级失败，请按任意键关机重启");
+    WaitKey(0);
+    ShutDown(); 
 
     syslog(LOG_INFO,"exit Update_YRJT_Image");
 	return;
