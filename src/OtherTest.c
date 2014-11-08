@@ -77,7 +77,7 @@ void PrintIMG()
 	ClearClient();
 	TextOut(0, 4, ALIGN_CENTER, "е§дкДђгЁ...");
 
-	for(i = 0; i < 3; i ++)
+	//for(i = 0; i < 3; i ++)
 	{
 		ret = PrintBMP(0, "pic/print.bmp");
 		DebugOut("PrintBMP ret:[%d]\n", ret);

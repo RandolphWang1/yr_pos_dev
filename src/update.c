@@ -5,15 +5,15 @@
 
 #define TMP_MD5_FILE "/tmp/md5_8888.txt"
 #define PKG_DEST_PATH "/usr/local/tmp.tar.gz"
-#define PKG_MD5_PATH "/tmp/pkg_md5.txt"
 #define DOWNLOAD_PKG_SCRIPT "/usr/local/D620D/download_update.txt"
-#define DOWNLOAD_PKG_DESC "/usr/local/D620D/download_desc.txt"
 #define DEL_TMP_SCRIPT "/usr/local/D620D/removeTmpFile.txt"
 #define UPLOAD_LOG_SCRIPT "/usr/local/D620D/upload_log.txt"
 
 char *local_md5=NULL;
-char package_md5[33] = {0};
 #define MD5_FILE_PATH "/usr/local/D620D/local_md5.txt"
+
+static char md5sum[32+1] = {0};
+static char version[30+1] = {0};
 
 /*This info is saved in the update.txt of sever*/
 typedef struct update_zip_info{
@@ -95,30 +95,7 @@ int exec_cmds(char *path)
 
 int update_md5_to_config(update_zip_info_t *info)
 {
-        FILE *fp;
-        fp = fopen(PKG_MD5_PATH,"r");
-        if(fp == 0){
-            syslog(LOG_ERR,"open %s fail",PKG_MD5_PATH);
-            return NULL;
-        }
-        
-        while(fgets(buf,BUF_LEN, fp) != NULL){
-            int i = 0;
-            char *p = NULL;
-
-            p = strstr(buf,"<m>");
-            if(p){
-                syslog(LOG_INFO,"find the package md5 string of %s\n",getenv("IMSI"));
-                strncpy(package_md5,p+3,32);
-                syslog(LOG_INFO,"The md5 string is:%s\n",package_md5);
-            }
-
-            info->md5 = package_md5;
-                 
-        } 
-        fclose(fp);
-    
-        return 0;
+return 0;
 }
 
 
@@ -138,27 +115,30 @@ int get_desc(char *buf)
     return 0;
 }
 
+extern int getSWmd5(char* md5sum, char* version);
 int parse_desc(char *buf,update_zip_info_t *info)
-{
-    //info->md5 = "628acc3f29cc4accecbb47642418333c";
-    int ret;
-    syslog(LOG_INFO,"IMSI=%s",getIMSIconfig());
-    setenv("IMSI",getIMSIconfig(),1);
-    syslog(LOG_INFO,"echo $IMSI=%s",getenv("IMSI"));
-    setenv("PKG_MD5_PATH",PKG_MD5_PATH,1); 
-    syslog(LOG_INFO,"echo $PKG_MD5_PATH=%s",getenv("PKG_MD5_PATH"));
-    ret = exec_cmds(DOWNLOAD_PKG_DESC);
-    if(ret!= 0)
-        return ret;
-    ret = update_md5_to_config(info);
-    info->ver = "master";
-    printf("parse_desc:%s:%s\n", info->ver, info->md5);
-    return ret;
+{   
+    getSWmd5(md5sum,version);
+    printf("getSWmd5:%s, version:%s\n",md5sum, version);
+    if(strlen(version))
+        info->ver = version;
+    else
+        info->ver = "master";
+    if(strlen(md5sum))
+        info->md5 = md5sum;
+    else
+        info->md5 = "628acc3f29cc4accecbb47642418333c";
+    printf("parse_desc:%s:%s\n", info->ver,info->md5);
+    return 0;
 }
 
 
 int prepare_update_process(update_zip_info_t *info)
 {
+    syslog(LOG_INFO,"IMSI=%s",getIMSIconfig());
+    setenv("IMSI",getIMSIconfig(),1);
+    syslog(LOG_INFO,"echo $IMSI=%s",getenv("IMSI"));
+
     setenv("NEW_MD5",info->md5,1);
     syslog(LOG_INFO,"echo $NEW_MD5=%s",getenv("NEW_MD5"));
     
@@ -173,7 +153,9 @@ int prepare_update_process(update_zip_info_t *info)
 int download_Update_Pkg(update_zip_info_t *info)
 {
     int ret = exec_cmds(DOWNLOAD_PKG_SCRIPT);
-    //ret = update_md5_to_config(info);
+    if(ret!= 0)
+        return ret;
+    ret = update_md5_to_config(info);
     return ret;
 }
 
@@ -273,6 +255,7 @@ void Update_YRJT_Image(void)
         stop_to_show_notification();
 		goto out;
     }
+    printf("before parse_desc\n");
     //parse description file
     ret = parse_desc(buf,&info);
 	if(ret != 0){

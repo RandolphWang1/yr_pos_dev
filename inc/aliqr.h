@@ -44,6 +44,8 @@ struct qr_result {
     char exchange_start_time[19+1];
     char exchange_end_time[19+1];
     char take_out_phone[30]; // for take out 
+    char md5sum[32+1];
+    char version[30+1];
 };
 
 #define QRRESULT sizeof(struct qr_result)

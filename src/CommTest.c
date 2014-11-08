@@ -577,9 +577,9 @@ void SetCommParam()
 
         printf("go before SetCommParam WaitLimitKey\n");
 #ifdef REFUND_EN
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x06\x0a\x0d\x12", 10, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x06\x0a\x12", 9, 0);
 #else
-        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x0a\x0d\x12", 9, 0);
+        ucKey = WaitLimitKey("\x00\x01\x02\x03\x04\x05\x0a\x12", 8, 0);
 #endif
         printf("go after SetCommParam WaitLimitKey\n");
         memset(sKeyName, 0, sizeof(sKeyName));
@@ -625,7 +625,6 @@ void SetCommParam()
             case KEY_3:
                 query24h();
                 break;
-               
 			case KEY_4:
                 qrexchange();
                 break;
@@ -650,8 +649,13 @@ void SetCommParam()
                     TextOutByPixel(105, 60, "1.当前版本");
                     TextOutByPixel(105, 80, "2.远程升级");
                     TextOutByPixel(105, 100, "3.上传故障信息");
+                    TextOutByPixel(105, 140, "5.设置时间");
+#ifdef RECEIPT_CONF
                     TextOutByPixel(105, 120, "4.设置抬头");
-                    ucKey = WaitLimitKey("\x01\x02\x03\x04\x12", 5, 0);
+                    ucKey = WaitLimitKey("\x01\x02\x03\x04\x05\x12", 6, 0);
+#else
+                    ucKey = WaitLimitKey("\x01\x02\x03\x05\x12", 5, 0);
+#endif
                     if ('\x01' == ucKey)
                         showVersion();
 
@@ -660,17 +664,17 @@ void SetCommParam()
 
                     if ('\x03' == ucKey)
                         upload_debug_log();
-                    if ('\x04' == ucKey) {
 #ifdef RECEIPT_CONF
+                    if ('\x04' == ucKey) {
                         SetReceiptInfo();
+                    } 
 #endif
+                    if ('\x05' == ucKey) {
+                        JingZhenTest();
                     } 
                 } else if(ucKey == KEY_CANCEL || ucKey == KEY_BACKSPACE)
                     return; 
-                        break;
-            case KEY_F2:
-                        JingZhenTest();
-                            break;	
+                break;
 		}
 	}
 }
@@ -852,6 +856,23 @@ unsigned int Money2int(char* buf)
     return feeint;
 }
 
+void printAD()
+{
+	int ret;
+
+    Clear();
+	TextOut(0, 4, ALIGN_CENTER, "正在打印...");
+
+	ret = PrintBMP(0, "pic/print.bmp");
+	printf("PrintBMP ret:[%d]\n", ret);
+    if(ret != OK)
+    {
+        FailBeep();
+        ClearClient();
+        TextOut(0, 4, ALIGN_CENTER, "打印失败");
+        WaitKey(2000);
+    }
+}
 void printTail(char* price, char* out_trade_no)
 {
     int ret = 0;
@@ -885,7 +906,11 @@ START_PRINT:
     SetPrintFont(24);
     strcpy(printBuff,"     联系电话：4008190900");
     FillPrintBuff(printBuff);
-    PrintEmptyLine(4);
+    strcpy(printBuff,"-----------------------------------");
+    FillPrintBuff(printBuff);
+    strcpy(printBuff,"以下广告位招商电话：4008190900");
+    FillPrintBuff(printBuff);
+    PrintEmptyLine(1);
 
     
 
@@ -903,6 +928,22 @@ START_PRINT:
         else if(ret == -3) 
             goto end1;
     }   
+    printAD();
+
+    ClearPrintBuff();
+    PrintEmptyLine(3);
+    ret =StartPrint();
+    DebugOut("print error code:[%d]\n", ret);
+    if(ret != 0)
+    {   
+        if(ret == -1) 
+            goto START_PRINT;
+        else if(ret == -2) 
+            goto end2;
+        else if(ret == -3) 
+            goto end1;
+    }   
+
     return;
 end1:  
 
@@ -1449,6 +1490,20 @@ end2:
 
         return ERROR;
 normal:
+}
+
+int getSWmd5(char* md5sum, char* version)
+{
+    
+    int ret = 0;
+    printf("enter getSWmd5\n");
+    memset((void*)&commTestOut, 0, sizeof(commTestOut));
+    ret = preImsi((void*)&commTestOut,ALI_LASTESTMD5);
+    printf("after preImsi\n");
+    strcpy(md5sum,commTestOut.md5sum);
+    strcpy(version,commTestOut.version);
+    printf("md5sum:%s, version:%s\n",md5sum, version);
+    return 0;
 }
 
 void qrexchange(void)

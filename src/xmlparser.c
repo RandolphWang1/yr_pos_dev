@@ -138,7 +138,7 @@ int alipay_main(struct qr_result *query_result, struct payInfo* order_info, int 
     }
 
     curl_global_cleanup();
-    printf("exit alipay_main");
+    printf("exit alipay_main\n");
     return 0;
 }
 
@@ -259,6 +259,16 @@ void endElement(void *userData, const XML_Char *name)
     if( strcmp(name,"tp") == 0) {//take out telephone number 
         if(state->characters.memory != NULL) {
             memcpy(st_query_result->take_out_phone, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"m") == 0) {//md5sum
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->md5sum, state->characters.memory,state->characters.size);
+        }
+    }
+    if( strcmp(name,"v") == 0) {//version
+        if(state->characters.memory != NULL) {
+            memcpy(st_query_result->version, state->characters.memory,state->characters.size);
         }
     }
 #if 0
