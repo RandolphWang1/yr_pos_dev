@@ -173,6 +173,7 @@ char *get_local_md5(void)
         fp = fopen(MD5_FILE_PATH,"r");
         if(fp == 0){
             syslog(LOG_ERR,"open %s fail",MD5_FILE_PATH);
+            printf("open %s fail\n",MD5_FILE_PATH);
             return NULL;
         }
         
@@ -182,9 +183,11 @@ char *get_local_md5(void)
             if(buf[0] == '#')
                 continue;
 
-            if(strncmp("md5:",buf,4) == 0)
+            printf("buf:%s, %d\n",buf,__LINE__);
+            if(strncmp("md5:",buf,4) != 0)
                 continue;
 
+            printf("%d\n",__LINE__);
             p = &buf[4];
             for(i=0;i<32;i++)
                 {
@@ -198,6 +201,7 @@ char *get_local_md5(void)
                     break;
                 }
             
+            printf("i:%d\n",i);
             if(i == 32){
                 //md5 is ok,save it and jump out the loop
                 //md5 is 128bit, 32 char + 1 end
@@ -205,6 +209,7 @@ char *get_local_md5(void)
                 memset(local_md5,0,33);
                 memcpy(local_md5,&buf[4],32);
                 syslog(LOG_INFO,"detect md5=%s",local_md5);
+                printf("detect md5=%s\n",local_md5);
                 break;
             }
             //if md5 is not right, go on to look for...        
@@ -218,16 +223,27 @@ char *get_local_md5(void)
 
 BOOL is_need_update(update_zip_info_t *info)
 {
+    if((get_local_md5()==NULL) )
+        printf("get_local_md5 == NULL\n");
+    if(get_yrjt_ver()==NULL) 
+        printf("get_yrjt_ver is null\n");
+    if( info->ver ==NULL || info->md5 == NULL){
+        printf("info null\n");
+    }
     if((get_local_md5()==NULL) ||(get_yrjt_ver()==NULL) \
         || info->ver ==NULL || info->md5 == NULL){
+        printf("!!!all is null\n");
         return TRUE;
     }
     //!!!!! now because server always return v0.1 so only check md5, tmp solution by storm 20141108
     if(/*(strcmp(get_yrjt_ver(),info->ver) == 0) && \*/
-        (strcmp(get_local_md5(),info->md5) == 0))
+        (strcmp(get_local_md5(),info->md5) == 0)) {
+        printf("all is null\n");
         return FALSE;
-    else
+   } else {
+        printf("!!!get_local_md5():%s,info->md5:%s\n",get_local_md5(),info->md5);
         return TRUE;
+    }
 }
 
 void Update_YRJT_Image(void)
@@ -312,6 +328,8 @@ out:
     printf("after removeTmpFile\n");
     safe_free_mem((void*)&buf);
     safe_free_mem((void*)&local_md5);
+    local_md5 = NULL;
+    buf = NULL;
 
 
     syslog(LOG_INFO,"exit Update_YRJT_Image");
