@@ -123,7 +123,7 @@ int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
         strcpy(qrpay_info.order_subject,in->order_subject);
     else {
         int subjectlen = 0;
-        subjectlen = getsubject("/usr/local/subject.txt",subject);
+        subjectlen = getsubject("/usr/local/D620D/subject.txt",subject);
         if(subjectlen > 0 ) {
             printf("subject:%d:%s",subjectlen,subject);
             strncpy(qrpay_info.order_subject,subject,subjectlen);
