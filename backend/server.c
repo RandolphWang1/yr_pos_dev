@@ -85,20 +85,10 @@ void payment_alarm_handler(int sig) {
     nbytes = strlen(payquery_result.qr_string);
     write(socket_fd, payquery_result.qr_string, nbytes);
     close(socket_fd);
-    }
-    if(strlen(payquery_result.qr_string)&&strstr(payquery_result.qr_string, "TRADE_SUCCESS")){
-    printf("the online qrcode payment successful\n");
-    }
-    else{   
-    printf("the online qrcode payment failed\n");
-#if 0
-    int pos_fd = get_posfd();
-    write(pos_fd,"\n",1);
-    write(pos_fd, "TRADE_FAILURE\n",14);
-    write(pos_fd,"\n",1);
-    write(pos_fd,"\n",1);
-    write(pos_fd,"\n",1);
-#endif
+    query_count = 0;
+    alarm(0);
+    syslog(LOG_INFO,"stop alarm timer after query completed\n");
+    return;
     }
 #ifdef ALIPAY_FIFO
     query_count--;
