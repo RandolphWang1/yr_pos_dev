@@ -1773,8 +1773,11 @@ void query24h(void)
     T_DATETIME tTime;
     struct receipt_info pos_receipt;
     char PrintBuff[100];
-    unsigned int total24h_fee = 0;
-    char total24h_feestr[16] = {0};
+    int total24h_fee = 0;
+    unsigned int total24h_refund = 0;
+    unsigned int temp_fee = 0;
+    char total24h_feestr[17] = {0};
+    char temp_feestr[17] = {0};
     Clear();
     TextOut(0, 3, ALIGN_LEFT, "查询近24小时成功交易");
     //ret = alipay_query_24h(result24h);
@@ -1848,7 +1851,22 @@ START_PRINT:
         strcpy(pos_receipt.trade_no,trade_detail[2]);
         strcpy(pos_receipt.total_fee,trade_detail[3]);
 
+        if (i >= commTestOut.order_total) {
+        temp_fee = Money2int(trade_detail[3]);
+        total24h_fee -= temp_fee;
+        total24h_refund += temp_fee;
+        }
+        else
         total24h_fee += Money2int(trade_detail[3]);
+
+        if (i == commTestOut.order_total) {
+        //syslogd(LOG_INFO, "print refund list below, the list number is %d\n",trade_num - i);
+        printf("print refund list below, the list number is %d\n",trade_num - i);
+        PrintEmptyLine(2);	 
+        strcpy(PrintBuff,"如下为退款记录:");
+        FillPrintBuff(PrintBuff);
+        PrintEmptyLine(1);	 
+        } 
 
         printf("total24h_fee:%d", total24h_fee);
         strcpy(PrintBuff,"时间：");
@@ -1906,29 +1924,43 @@ START_PRINT:
     SetPrintFont(32);
 
 #if 1
+    if(total24h_fee >= 0) {
     sprintf(total24h_feestr,"%d", total24h_fee);
     printf("\nbefore:%s\n", total24h_feestr);
     Moneyformat(total24h_feestr);
     printf("\nafter:%s\n", total24h_feestr);
     printf("total24h_feestr:%s", total24h_feestr);
-    strcpy(PrintBuff,"总金额：");
+    }
+    else {
+    total24h_fee = 0 - total24h_fee;
+    sprintf(total24h_feestr,"%d", total24h_fee);
+    printf("\nbefore:%s\n", total24h_feestr);
+    Moneyformat(total24h_feestr);
+    strncpy(temp_feestr,"-",1);
+    strcat(temp_feestr,total24h_feestr);
+    strncpy(total24h_feestr,temp_feestr,17);
+    printf("\nafter:%s\n", total24h_feestr);
+    printf("total24h_feestr:%s", total24h_feestr);
+    }
+    strcpy(PrintBuff,"总金额:");
     strcat(PrintBuff, total24h_feestr);
     FillPrintBuff(PrintBuff);	   
     //memset(PrintBuff,0,sizeof(PrintBuff));
     sprintf(trade_numstr, "总单数:%d", trade_num);
     strcpy(PrintBuff, trade_numstr);
     FillPrintBuff(PrintBuff);	   
-//#else
+#if 0
     strcpy(PrintBuff,"总金额：");
     strcat(PrintBuff, commTestOut.amount_total);
     FillPrintBuff(PrintBuff);
-    strcpy(PrintBuff,"总退款金额：");
-    strcat(PrintBuff, commTestOut.refund_amount);
+#endif
+    /* use temp_feestr as the string of refund money */
+    sprintf(temp_feestr,"%d", total24h_refund);
+    Moneyformat(temp_feestr);
+    strcpy(PrintBuff,"总退款金额:");
+    strcat(PrintBuff, temp_feestr);
     FillPrintBuff(PrintBuff);
-    strcpy(PrintBuff,"总剩余金额：");
-    strcat(PrintBuff, commTestOut.remain_amount);
-    FillPrintBuff(PrintBuff);
-    sprintf(trade_numstr, "总单数:%d", commTestOut.order_total);
+    sprintf(trade_numstr,"总退款单数:%d", trade_num - commTestOut.order_total);
     strcpy(PrintBuff, trade_numstr);
     FillPrintBuff(PrintBuff);
 #endif

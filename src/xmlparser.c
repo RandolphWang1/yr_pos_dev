@@ -185,6 +185,12 @@ void endElement(void *userData, const XML_Char *name)
             memcpy(st_query_result->order, state->characters.memory,state->characters.size);
         }
     }
+    if( strcmp(name,"rfo") == 0) {//order
+        if(state->characters.memory != NULL) {
+            strncat(st_query_result->order, "|",1);
+            strcat(st_query_result->order, state->characters.memory);
+        }
+    }
     if( strcmp(name,"is") == 0) { //is_success
         if(state->characters.memory != NULL) {
             memcpy(&st_query_result->is_success, state->characters.memory,state->characters.size);
