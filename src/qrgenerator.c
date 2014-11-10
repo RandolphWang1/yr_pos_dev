@@ -16,7 +16,7 @@ char szQrcodeString[QRRESULT] = {0};
 
 //char* subject = "Alipay";
 char subject[128+1] = {0};
-char* defaultsubject = "AliPay";
+char* defaultsubject = "e-richpay";
 int getsubject(char* name,char* buf);
 #if 0
 int main(int argc, char** argv)
