@@ -630,7 +630,10 @@ void SetCommParam()
                 qrexchange();
                 break;
             case KEY_5:
-                qrexchangedorder();
+                qrexchangedorderpre();
+                TextOut(0, 7, ALIGN_CENTER, "是否打印1.是   其他键.否"); 
+                if(WaitKey(0) == KEY_1)
+                    qrexchangedorder();
 				break;	
 			case KEY_6:
                 refund();
@@ -1572,6 +1575,24 @@ end2:
 
         return ERROR;
 normal:
+}
+
+int qrexchangedorderpre(void)
+{
+    int ret = 0, i;
+    int trade_num;
+    char showbuf[50]={0};
+    char total_feestr[16] = {0};
+    Clear();
+    TextOut(0, 3, ALIGN_LEFT, "结算（签退）");
+    //ret = alipay_query_24h(result24h);
+    memset(commTestOut.order, 0, sizeof(commTestOut.order));
+    ret = preImsi((void*)&commTestOut,ALI_EXCHANGEORDER);
+    TextOut(0, 4, ALIGN_LEFT, "签到时间");
+    TextOut(0, 5, ALIGN_LEFT, exchange2date(commTestOut.exchange_start_time));
+    sprintf(showbuf, "单数：%d,总金额：%s",commTestOut.order_total,commTestOut.amount_total);
+    TextOut(0, 6, ALIGN_LEFT, showbuf);
+    
 }
 
 int qrexchangedorder(void)

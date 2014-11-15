@@ -57,7 +57,9 @@ fota:D620D
 	rm -f *.o *bak
 	
 fota_all:D620D
-	tar zcvf tmp.tgz D620D/ drv/ local.sh
+	cp ../backend/query_server .
+	cp ../../yr_ppp/ppp.tar.gz .
+	tar zcvf tmp.tgz ppp.tar.gz query_server D620D/ drv/ local.sh
 	rm -f ../all_$(BRANCH_NAME)*
 	mv ./tmp.tgz ../all_$(FOTA_PKG_NAME)
 	rm -f *.o *bak	
