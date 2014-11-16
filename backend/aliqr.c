@@ -68,7 +68,8 @@ int alipay_precreatebak(char* precr, int* len)
 }
 #endif
 #if 1
-char* jfserver = "182.92.8.2";
+//char* jfserver = "182.92.8.2";
+char* jfserver = "182.92.173.31";
 int portnumber = 8080;
 #else
 char* jfserver = "182.92.186.90";

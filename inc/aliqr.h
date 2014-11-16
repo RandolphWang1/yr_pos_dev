@@ -53,7 +53,8 @@ struct qr_result {
 #if 0
 #define ALISER "182.92.186.90"
 #else
-#define ALISER "182.92.8.2"
+//#define ALISER "182.92.8.2"
+#define ALISER "182.92.173.31"
 #endif
 
 #define ORDERKEY "11"
