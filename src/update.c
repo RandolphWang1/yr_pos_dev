@@ -47,6 +47,7 @@ void showVersion(void)
     char *ver = get_yrjt_ver();
 	Clear();
 	TextOut(0, 3, ALIGN_CENTER, ver);
+	TextOut(0, 4, ALIGN_CENTER, get_local_md5());
     stop_to_show_notification();
 	return;
 }

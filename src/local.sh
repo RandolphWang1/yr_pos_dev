@@ -21,6 +21,8 @@ mkdir /etc/var
 mkdir /etc/var/lock
 mkdir /etc/var/run
 mkdir /etc/var/log
+mkdir /usr/etc/ppp
+mkdir /usr/etc/ppp/peers
 
 cd /usr/local/
 

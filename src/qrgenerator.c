@@ -213,7 +213,10 @@ int viewsingle(void* gout,char* serial_number)
     qrpay_info.order_number = atoll(serial_number);
     /* print the qr code from alipay */
     alipay_main(out, &qrpay_info, ALI_VIEW_SINGLE);
-    return 1;
+    if(out->is_success == 'T' && strcmp(out->total_status,"TRADE_SUCCESS") == 0)
+        return 1;
+    else
+        return 0;
 }
 
 #if 1
