@@ -23,6 +23,8 @@ mkdir /etc/var/run
 mkdir /etc/var/log
 mkdir /usr/etc/ppp
 mkdir /usr/etc/ppp/peers
+chmod 777 /usr/etc/ppp
+chmod 777 /usr/etc/ppp/peers
 
 cd /usr/local/
 
