@@ -631,7 +631,8 @@ void SetCommParam()
                 break;
             case KEY_5:
                 qrexchangedorderpre();
-                TextOut(0, 7, ALIGN_CENTER, "是否打印1.是   其他键.否"); 
+                TextOut(0, 8, ALIGN_CENTER, "是否打印"); 
+                TextOut(0, 9, ALIGN_CENTER, "1.是   其他键.否"); 
                 if(WaitKey(0) == KEY_1)
                     qrexchangedorder();
 				break;	
@@ -1978,12 +1979,14 @@ START_PRINT:
     /* use temp_feestr as the string of refund money */
     sprintf(temp_feestr,"%d", total24h_refund);
     Moneyformat(temp_feestr);
+#ifdef REFUND_EN
     strcpy(PrintBuff,"总退款金额:");
     strcat(PrintBuff, temp_feestr);
     FillPrintBuff(PrintBuff);
     sprintf(trade_numstr,"总退款单数:%d", trade_num - commTestOut.order_total);
     strcpy(PrintBuff, trade_numstr);
     FillPrintBuff(PrintBuff);
+#endif
 #endif
     PrintEmptyLine(3);	 
     ret = StartPrint();
