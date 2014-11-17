@@ -21,10 +21,12 @@ mkdir /etc/var
 mkdir /etc/var/lock
 mkdir /etc/var/run
 mkdir /etc/var/log
-mkdir /usr/etc/ppp
-mkdir /usr/etc/ppp/peers
-chmod 777 /usr/etc/ppp
-chmod 777 /usr/etc/ppp/peers
+if [ ! -d "/usr/etc/ppp" ]; then
+	mkdir /usr/etc/ppp
+	mkdir /usr/etc/ppp/peers
+	chmod 777 /usr/etc/ppp
+	chmod 777 /usr/etc/ppp/peers
+fi
 
 cd /usr/local/
 
