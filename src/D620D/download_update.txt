@@ -1,5 +1,5 @@
 #download
-/usr/local/curl -C 0 http://182.92.8.2:8080/qrcode/lastest/?i=$IMSI > $PKG_DEST_PATH
+/usr/local/curl -C 0 http://182.92.173.31:8080/qrcode/lastest/?i=$IMSI > $PKG_DEST_PATH
 #check
 echo "$NEW_MD5  $PKG_DEST_PATH" > $TMP_MD5_FILE
 /usr/local/md5sum -c --status $TMP_MD5_FILE
