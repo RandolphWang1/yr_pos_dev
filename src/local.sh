@@ -43,7 +43,7 @@ syslogd
 
 ifconfig lo 127.0.0.1 up
 
-/usr/local/query_server.out&
+./query_server&
 #./srv&
 
 cd D620D

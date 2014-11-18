@@ -61,7 +61,7 @@ fota_all:D620D
 	cp ../../yr_ppp/ppp.tar.gz .
 	cp ../bin/curl .
 	cp ../bin/md5sum .
-	tar zcvf tmp.tgz ppp.tar.gz query_server D620D/ drv/ local.sh md5sum curl
+	tar zcvf tmp.tgz ppp.tar.gz query_server D620D/ drv/ local.sh md5sum curl config.txt
 	rm -f ../all_$(BRANCH_NAME)*
 	mv ./tmp.tgz ../all_$(FOTA_PKG_NAME)
 	rm -f *.o *bak md5sum curl	
