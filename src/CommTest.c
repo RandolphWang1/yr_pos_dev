@@ -630,10 +630,12 @@ void SetCommParam()
                 qrexchange();
                 break;
             case KEY_5:
+#if 0
                 qrexchangedorderpre();
                 TextOut(0, 8, ALIGN_CENTER, "是否打印"); 
                 TextOut(0, 9, ALIGN_CENTER, "1.是   其他键.否"); 
                 if(WaitKey(0) == KEY_1)
+#endif
                     qrexchangedorder();
 				break;	
 			case KEY_6:
@@ -1578,6 +1580,7 @@ end2:
 normal:
 }
 
+#if 0
 int qrexchangedorderpre(void)
 {
     int ret = 0, i;
@@ -1595,6 +1598,7 @@ int qrexchangedorderpre(void)
     TextOut(0, 6, ALIGN_LEFT, showbuf);
     
 }
+#endif
 
 int qrexchangedorder(void)
 {
@@ -1603,23 +1607,40 @@ int qrexchangedorder(void)
     char trade_numstr[64] = {0};
     char *trade_ptr[2000] = {NULL}; 
     char *trade_detail[5] = {NULL}; 
+    char showbuf[50]={0};
     char pos_date[12];
     char pos_time[12];
     T_DATETIME tTime;
     struct receipt_info pos_receipt;
     char PrintBuff[100];
-    unsigned int total24h_fee = 0;
-    char total24h_feestr[16] = {0};
+    int total24h_fee = 0;
+    unsigned int total24h_refund = 0;
+    unsigned int temp_fee = 0;
+    char total24h_feestr[17] = {0};
+    char temp_feestr[17] = {0};
     Clear();
     TextOut(0, 3, ALIGN_LEFT, "结算（签退）");
     //ret = alipay_query_24h(result24h);
     memset(result24h, 0, sizeof(result24h));
     memset(commTestOut.order, 0, sizeof(commTestOut.order));
     ret = preImsi((void*)&commTestOut,ALI_EXCHANGEORDER);
-    strcpy(result24h,commTestOut.order);
 
+    strcpy(result24h,commTestOut.order);
     trade_num = SplitStr(result24h,trade_ptr,"|");
 
+    TextOut(0, 4, ALIGN_LEFT, "签到时间");
+    TextOut(0, 5, ALIGN_LEFT, exchange2date(commTestOut.exchange_start_time));
+#ifdef REFUND_EN
+    sprintf(showbuf, "单数：%d,总金额：%s",trade_num,commTestOut.amount_total);
+#else
+    sprintf(showbuf, "单数：%d,总金额：%s",commTestOut.order_total,commTestOut.amount_total);
+#endif
+    TextOut(0, 6, ALIGN_LEFT, showbuf);
+
+    TextOut(0, 8, ALIGN_CENTER, "是否打印"); 
+    TextOut(0, 9, ALIGN_CENTER, "1.是   其他键.否"); 
+    if(WaitKey(0) != KEY_1)
+        return 0; 
     pthread_mutex_lock(&prmutex);
 START_PRINT:
     if(CheckPrinter() != TRUE) {
@@ -1679,7 +1700,26 @@ START_PRINT:
         strcpy(pos_receipt.trade_no,trade_detail[2]);
         strcpy(pos_receipt.total_fee,trade_detail[3]);
 
+#ifdef REFUND_EN
+        if (i >= commTestOut.order_total) {
+        temp_fee = Money2int(trade_detail[3]);
+        total24h_fee -= temp_fee;
+        total24h_refund += temp_fee;
+        }
+        else
+#endif
         total24h_fee += Money2int(trade_detail[3]);
+
+#ifdef REFUND_EN
+        if (i == commTestOut.order_total) {
+        //syslogd(LOG_INFO, "print refund list below, the list number is %d\n",trade_num - i);
+        printf("print refund list below, the list number is %d\n",trade_num - i);
+        PrintEmptyLine(2);	 
+        strcpy(PrintBuff,"如下为退款记录:");
+        FillPrintBuff(PrintBuff);
+        PrintEmptyLine(1);	 
+        } 
+#endif
 
         printf("total24h_fee:%d", total24h_fee);
         strcpy(PrintBuff,"时间：");
@@ -1736,11 +1776,26 @@ START_PRINT:
     SetPrintIndent(0);
     SetPrintFont(32);
 
+    if(total24h_fee >= 0) {
     sprintf(total24h_feestr,"%d", total24h_fee);
     printf("\nbefore:%s\n", total24h_feestr);
     Moneyformat(total24h_feestr);
     printf("\nafter:%s\n", total24h_feestr);
     printf("total24h_feestr:%s", total24h_feestr);
+    }
+#ifdef REFUND_EN
+    else {
+    total24h_fee = 0 - total24h_fee;
+    sprintf(total24h_feestr,"%d", total24h_fee);
+    printf("\nbefore:%s\n", total24h_feestr);
+    Moneyformat(total24h_feestr);
+    strncpy(temp_feestr,"-",1);
+    strcat(temp_feestr,total24h_feestr);
+    strncpy(total24h_feestr,temp_feestr,17);
+    printf("\nafter:%s\n", total24h_feestr);
+    printf("total24h_feestr:%s", total24h_feestr);
+    }
+#endif
     strcpy(PrintBuff,"总金额：");
     strcat(PrintBuff, total24h_feestr);
     FillPrintBuff(PrintBuff);	   
@@ -1748,6 +1803,17 @@ START_PRINT:
     sprintf(trade_numstr, "总单数:%d", trade_num);
     strcpy(PrintBuff, trade_numstr);
     FillPrintBuff(PrintBuff);	   
+#ifdef REFUND_EN
+    /* use temp_feestr as the string of refund money */
+    sprintf(temp_feestr,"%d", total24h_refund);
+    Moneyformat(temp_feestr);
+    strcpy(PrintBuff,"总退款金额:");
+    strcat(PrintBuff, temp_feestr);
+    FillPrintBuff(PrintBuff);
+    sprintf(trade_numstr,"总退款单数:%d", trade_num - commTestOut.order_total);
+    strcpy(PrintBuff, trade_numstr);
+    FillPrintBuff(PrintBuff);
+#endif
     PrintEmptyLine(3);	 
     ret = StartPrint();
     pthread_mutex_unlock(&prmutex);
