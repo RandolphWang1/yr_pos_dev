@@ -139,7 +139,7 @@ int main(void)
     query_count = 5;
 #endif
     if (pos_imsi[0] == '\0'){
-        /* get imsi from config.tx */
+        /* get imsi from config.txt */
         fp = fopen("/usr/local/config.txt","r");
         if(fp == NULL)
         {
@@ -196,6 +196,24 @@ int main(void)
                     syslog(LOG_INFO,"Get START Trigger From Main Server!\n"); 
                     query_count = 60;
                     alarm(10);
+                    /* get imsi from config.txt */
+                    fp = fopen("/usr/local/config.txt","r");
+                    if( fp == NULL || fgets(buffer, 30, fp) == NULL )
+                    {       
+                        printf("couldn't open config.txt or error reading config\n");
+                        fclose(fp);
+                        continue ;
+                    }       
+                    for (i=0; i<30; i++) {
+                        if(buffer[i] == '\n') { 
+                        buffer[i] = '\0'; 
+                        break;  
+                        }       
+                    }       
+                    fclose(fp);
+                    /* copy after IMSI: */
+                    strcpy(qrpay_info.imsi,&buffer[5]);
+                    syslog(LOG_INFO,"the pos query imsi string is %s\n",qrpay_info.imsi);
                 }
 #else 
                 pause();
