@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <syslog.h>
 
 pthread_mutex_t prmutex;
 #define ALIPAY_QUERY
@@ -531,6 +532,8 @@ void SetCommParam()
 {
 	UCHAR ucKey;
 	char sKeyName[20];
+        char imsi_info[15+1] = {0};
+        char device_id[10] = {0};
 	int ret;
     int err;
     pthread_t ntid;
@@ -657,11 +660,12 @@ void SetCommParam()
                     TextOutByPixel(105, 80, "2.远程升级");
                     TextOutByPixel(105, 100, "3.上传故障信息");
                     TextOutByPixel(105, 140, "5.设置时间");
+                    TextOutByPixel(105, 160, "6.设备信息");
 #ifdef RECEIPT_CONF
                     TextOutByPixel(105, 120, "4.设置抬头");
-                    ucKey = WaitLimitKey("\x01\x02\x03\x04\x05\x12", 6, 0);
+                    ucKey = WaitLimitKey("\x01\x02\x03\x04\x05\x06\x12", 7, 0);
 #else
-                    ucKey = WaitLimitKey("\x01\x02\x03\x05\x12", 5, 0);
+                    ucKey = WaitLimitKey("\x01\x02\x03\x05\x06\x12", 6, 0);
 #endif
                     if ('\x01' == ucKey)
                         showVersion();
@@ -679,6 +683,25 @@ void SetCommParam()
                     if ('\x05' == ucKey) {
                         JingZhenTest();
                     } 
+                    if ('\x06' == ucKey) {
+                        err = readIMSIconfig(imsi_info);
+                        Clear();
+                        if(err > 0) {
+                           TextOut(0, 5, ALIGN_CENTER, "IMSI串号读取错误");
+                           return;
+                        } 
+                        err = readDeviceID(device_id);
+                        if(err > 0) {
+                           TextOut(0, 5, ALIGN_CENTER, "设备号读取错误");
+                           return;
+                        } 
+                        TextOutByPixel(50, 60, "IMSI:");
+                        TextOutByPixel(100, 60, imsi_info);
+                        TextOutByPixel(50, 80, "设备号:");
+                        TextOutByPixel(130, 80, device_id);
+                        WaitLimitKey("\x12\x0E\x0F", 3, 0);
+                        return;
+                    }
                 } else if(ucKey == KEY_CANCEL || ucKey == KEY_BACKSPACE)
                     return; 
                 break;
@@ -2456,3 +2479,73 @@ int SetReceiptInfo()
 #endif
 
 
+int readIMSIconfig(char* pos_imsi)
+{
+    FILE *fp;
+    int i;  
+    char *buffer = NULL;
+
+    buffer = (char*)malloc(30);
+        if(!buffer)
+        {
+           syslog(LOG_ERR,"imsi string malloc failed\n");
+           return 1;
+        }
+        /* get imsi from config.tx */
+        fp = fopen("/usr/local/config.txt","r");
+        if(fp == NULL)
+        {       
+            syslog(LOG_ERR,"couldn't open config.txt\n");
+            return 1; 
+        }       
+        if( fgets(buffer, 30, fp) == NULL )
+        {       
+            syslog(LOG_ERR,"Error reading config\n");
+            fclose(fp);
+            return 1;
+        }       
+        for (i=0; i<30; i++) {
+            if(buffer[i] == '\n') { 
+                buffer[i] = '\0'; 
+                break;  
+            }       
+        }       
+        fclose(fp);
+        /* copy after IMSI: */
+        strcpy(pos_imsi,&buffer[5]);
+        syslog(LOG_INFO,"the pos imsi buffer string is %s\n",pos_imsi);
+        free(buffer); 
+        return 0;
+}
+
+int readDeviceID(char* pos_id)
+{
+    FILE *fp;
+    int i;  
+    char *buffer[10] = {0};
+
+        /* get imsi from config.tx */
+        fp = fopen("/usr/.sn.dat","r");
+        if(fp == NULL)
+        {       
+            syslog(LOG_ERR,"couldn't open .sn.dat\n");
+            return 1; 
+        }       
+        if( fgets(buffer, 10, fp) == NULL )
+        {       
+            syslog(LOG_ERR,"Error reading device id!\n");
+            fclose(fp);
+            return 1;
+        }       
+        for (i=0; i<10; i++) {
+            if(buffer[i] == '\n') { 
+                buffer[i] = '\0'; 
+                break;  
+            }       
+        }       
+        fclose(fp);
+        /* copy after device id reading */
+        strcpy(pos_id,buffer);
+        syslog(LOG_INFO,"the pos device id string is %s\n",pos_id);
+        return 0;
+}
