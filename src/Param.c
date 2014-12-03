@@ -105,11 +105,11 @@ void InitReceipt()
        //初始化各变量
        memset(&gRCP, 0, sizeof(T_RECEIPT));
 
-       memcpy(gRCP.rcp_title_line1,"   金湖茶餐厅",13);
-       memcpy(gRCP.rcp_title_line2,"     GL Cafe",12);
-       memcpy(gRCP.rcp_title_address,"  北三环东路36号环贸中心D栋1层",30);
-       memcpy(gRCP.rcp_title_number,"        订餐电话: 58257262",26);
-       memcpy(gRCP.rcp_title_company,"北京金湖餐饮有限公司金湖环贸店",30);
+       memcpy(gRCP.rcp_title_line1,"    小票标题",12);
+       memcpy(gRCP.rcp_title_line2,"      Title",11);
+       memcpy(gRCP.rcp_title_address,"          公司地址信息",22);
+       memcpy(gRCP.rcp_title_number,"          公司电话信息",22);
+       memcpy(gRCP.rcp_title_company,"            公司名称",20);
 
 	//保存
 	if(!WriteData("test-receipt.dat", (char *)(&gRCP), sizeof(T_RECEIPT), 0))
