@@ -77,7 +77,7 @@ int portnumber = 8080;
 #endif
 
 char* IMSI = "123456789012345";
-char* jfkey= "11";
+char jfkey[32+1] = {0};
 int serial_number = 20;
 char* jftotal_fee = "0.01";
 char* jfsubject = "ccc";
@@ -86,6 +86,36 @@ char* str_timemark = "1408001801550";
 //char* time_mark = "1408002548964";
 int alipay_precreate(char* precr, int* len, struct payInfo* order_info, int type)
 {
+    FILE *fp;
+    int i;
+    if (jfkey[0] == 0) {
+
+        /* get key from config.txt */
+        fp = fopen("/usr/local/config.txt","r");
+        if(fp == NULL)
+        {       
+            syslog(LOG_ERR,"couldn't open config.txt\n");
+            return; 
+        }       
+        fseek(fp, 21, SEEK_SET); /* 5 + 15 + 1 */ 
+        if( fgets(jfkey, sizeof(jfkey), fp) == NULL )
+        {       
+            syslog(LOG_ERR,"Error reading config\n");
+            fclose(fp);
+            return ;
+        }       
+        for (i=0; i<sizeof(jfkey); i++) {
+            if(jfkey[i] == '\n') {
+                jfkey[i] = '\0';
+                break;
+            }
+        }
+
+        fclose(fp);
+        memfrob(jfkey, strlen(jfkey));
+        printf("the dencrypted jfkey is %s\n",jfkey);
+    }
+
     if (type == ALI_PRECREATE_ORDER)
     //preorder
     alipay_preorder(precr,len,order_info);

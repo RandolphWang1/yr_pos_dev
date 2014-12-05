@@ -2,6 +2,7 @@
 #include "qrgenerator.h"
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include "Main.h"
 
 char qrQueryResult[16] = {0};
@@ -10,6 +11,7 @@ unsigned long long query_number = 0;
 unsigned long long query_number_idx = 1;
 unsigned long long old_query_number = 1;
 char pos_imsi[20];
+char jfkey[32+1] = {0};
 
 void getIMSIconfig();
 char szQrcodeString[QRRESULT] = {0};
@@ -93,7 +95,9 @@ int generator_qrcode_to_bmp(void* gout, char* price ,void* gin)
     char order_time[13] = {0};
     client_number[0] = '1';//to avoid 0 atoi bug
     getIMSIconfig();
-    strcpy(qrpay_info.order_key,ORDERKEY);
+    if(jfkey[0] == 0 && getPosKey() > 0)
+         return 1;
+    strcpy(qrpay_info.order_key,jfkey);
 #if 1
     /* Time for D620D Pos */
     GetDateTime(&tTime);
@@ -163,7 +167,9 @@ int preImsi(void* gout, int precreate_type)
 
     struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
-    strcpy(qrpay_info.order_key,ORDERKEY);
+    if(jfkey[0] == 0 && getPosKey() > 0)
+         return 1;
+    strcpy(qrpay_info.order_key,jfkey);
     alipay_main(out, &qrpay_info, precreate_type );
 
 }
@@ -196,7 +202,9 @@ int createrefund(void* gout, char* serial_number, char* refund_amount )
 
     struct qr_result* out = (struct qr_result*)gout; 
     getIMSIconfig();
-    strcpy(qrpay_info.order_key,ORDERKEY);
+    if(jfkey[0] == 0 && getPosKey() > 0)
+         return 1;
+    strcpy(qrpay_info.order_key,jfkey);
     //qrpay_info.order_number = query_number;
     qrpay_info.order_number = atoll(serial_number);
     //strcpy(qrpay_info.refund_amount, refund_amount);
@@ -317,3 +325,35 @@ int alipay_query_24h(char* query_24h)
     return ret;
 }
 #endif
+
+int getPosKey()
+{
+        FILE *fp;
+        int i;  
+
+        /* get key from config.txt */
+        fp = fopen("/usr/local/config.txt","r");
+        if(fp == NULL)
+        {       
+            syslog(LOG_ERR,"couldn't open config.txt\n");
+            return 1; 
+        }       
+        fseek(fp, 21, SEEK_SET); /* 5 + 15 + 1 */  
+        if( fgets(jfkey, sizeof(jfkey), fp) == NULL )
+        {       
+            syslog(LOG_ERR,"Error reading jfkey in config\n");
+            fclose(fp);
+            return 1;
+        }       
+        for (i=0; i<sizeof(jfkey); i++) {
+            if(jfkey[i] == '\n') { 
+                jfkey[i] = '\0'; 
+                break;  
+            }       
+        }       
+
+        fclose(fp);
+        memfrob(jfkey, strlen(jfkey));
+        return 0;
+
+}
