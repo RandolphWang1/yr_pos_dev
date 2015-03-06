@@ -110,6 +110,8 @@ void InitReceipt()
        memcpy(gRCP.rcp_title_address,"          公司地址信息",22);
        memcpy(gRCP.rcp_title_number,"          公司电话信息",22);
        memcpy(gRCP.rcp_title_company,"            公司名称",20);
+       memcpy(gRCP.rcp_tech_company,"盈润捷通",8);
+       memcpy(gRCP.rcp_tech_number,"4008190900",10);
 
 	//保存
 	if(!WriteData("test-receipt.dat", (char *)(&gRCP), sizeof(T_RECEIPT), 0))

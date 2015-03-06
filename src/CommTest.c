@@ -534,6 +534,7 @@ void SetCommParam()
 	char sKeyName[20];
         char imsi_info[15+1] = {0};
         char device_id[10] = {0};
+        char support_str[32+1] = {0};
 	int ret;
     int err;
     pthread_t ntid;
@@ -648,7 +649,9 @@ void SetCommParam()
                 Clear();
                 //TextOut(0, 0, ALIGN_CENTER, "IP 获取方式");
                 TextOut(0, 0, ALIGN_CENTER, "请谨慎使用在线更新服务");
-                TextOut(0, 1, ALIGN_CENTER, "盈润捷通支持电话：4008190900");
+                //TextOut(0, 1, ALIGN_CENTER, "盈润捷通支持电话：4008190900");
+                sprintf(support_str,"%s支持电话：%s",gRCP.rcp_tech_company,gRCP.rcp_tech_number);
+                TextOut(0, 1, ALIGN_CENTER, support_str);
 
 				TextOut(0, 4, ALIGN_CENTER, "请按OK键继续");
 				TextOut(0, 5, ALIGN_CENTER, "按CANCEL键或者BACK键返回");
@@ -931,14 +934,17 @@ START_PRINT:
     FillPrintBuff(printBuff);
     PrintEmptyLine(1);
     SetPrintFont(24);
-    strcpy(printBuff," 本产品由盈润捷通提供技术支持");
+    //strcpy(printBuff," 本产品由盈润捷通提供技术支持");
+    sprintf(printBuff," 本产品由%s提供技术支持",gRCP.rcp_tech_company);
     FillPrintBuff(printBuff);
     SetPrintFont(24);
-    strcpy(printBuff,"     联系电话：4008190900");
+    //strcpy(printBuff,"     联系电话：4008190900");
+    sprintf(printBuff,"     联系电话：%s",gRCP.rcp_tech_number);
     FillPrintBuff(printBuff);
     strcpy(printBuff,"-----------------------------------");
     FillPrintBuff(printBuff);
-    strcpy(printBuff,"以下广告位招商电话：4008190900");
+    //strcpy(printBuff,"以下广告位招商电话：4008190900");
+    sprintf(printBuff,"以下广告位招商电话：%s",gRCP.rcp_tech_number);
     FillPrintBuff(printBuff);
     PrintEmptyLine(1);
 
@@ -2168,22 +2174,28 @@ int SetReceiptInfo()
         SetScrFont(FONT20, WHITE);
         TextOut(0, 1, ALIGN_CENTER, "小票设置");
 
-        ShowBmpFile(90, 60, "pic/button.bmp");
-        TextOutByPixel(100, 65, "1.标题1");
+        ShowBmpFile(20, 60, "pic/button.bmp");
+        TextOutByPixel(30, 65, "1.标题1");
 
-        ShowBmpFile(90, 95, "pic/button.bmp");
-        TextOutByPixel(100, 100, "2.标题2");
+        ShowBmpFile(20, 95, "pic/button.bmp");
+        TextOutByPixel(30, 100, "2.标题2");
 
-        ShowBmpFile(90, 130, "pic/button.bmp");
-        TextOutByPixel(100, 135, "3.地址信息");
+        ShowBmpFile(20, 130, "pic/button.bmp");
+        TextOutByPixel(30, 135, "3.地址信息");
 
-        ShowBmpFile(90, 165, "pic/button.bmp");
-        TextOutByPixel(100, 170, "4.电话信息");
+        ShowBmpFile(20, 165, "pic/button.bmp");
+        TextOutByPixel(30, 170, "4.电话信息");
 
-        ShowBmpFile(90, 200, "pic/button.bmp");
-        TextOutByPixel(100, 205, "5.公司名称");
+        ShowBmpFile(20, 200, "pic/button.bmp");
+        TextOutByPixel(30, 205, "5.公司名称");
 
-        ucKey=WaitLimitKey("\x01\x02\x03\x04\x05\x12\x0E",7,0);
+        ShowBmpFile(160, 60, "pic/button.bmp");
+        TextOutByPixel(170, 65, "6.技术支持");
+
+        ShowBmpFile(160, 95, "pic/button.bmp");
+        TextOutByPixel(170, 100, "7.支持电话");
+
+        ucKey=WaitLimitKey("\x01\x02\x03\x04\x05\x06\x07\x12\x0E",9,0);
 
         switch(ucKey)
         {
@@ -2446,6 +2458,116 @@ int SetReceiptInfo()
              TextOut(0, 1, ALIGN_LEFT, "输入内容如下:");
              TextOut(0, 3, ALIGN_LEFT, buff);
              strcpy(gRCP.rcp_title_company,buff);
+
+             WaitKey(0);
+                if(WriteData("test-receipt.dat", &gRCP, sizeof(T_RECEIPT), 0) == FALSE)
+                {     
+                        Clear();                                                
+                        SetScrFont(FONT20, WHITE);
+                        TextOut(0, 3, ALIGN_CENTER, "保存文件出错"); 
+                        TextOut(0, 4, ALIGN_CENTER, "请稍后重试"); 
+                        FailBeep();
+                        WaitKey(2000);
+                        goto FAILED;
+                }     
+              
+                OkBeep();
+                Clear();
+                SetScrFont(FONT20, WHITE);
+                TextOut(2, 4, ALIGN_CENTER, "设置成功!");
+                WaitKey(2000);
+                break;
+              
+        }
+        break; 
+
+
+        case 6:  
+        while(1)
+        {
+             Clear();
+             SetScrFont(FONT20, WHITE);
+             TextOut(0, 1, ALIGN_CENTER, "请输入小票上技术支持公司简称:");
+             SetScrFont(FONT12, WHITE);
+             TextOut(0, 5, ALIGN_CENTER, "最多输入4个汉字或者8个英文字符和符号");
+             TextOut(0, 6, ALIGN_CENTER, "按F1键切换输入法，#键在非中文输入法中代表空格");
+             TextOut(0, 7, ALIGN_CENTER, "0键切换大小写，多组拼音时，用*和#键来上下选择");
+             memset(buff, 0, sizeof(buff));
+             TextOut(4, 9, ALIGN_LEFT, "原公司简称：");
+             TextOut(18, 9, ALIGN_LEFT, gRCP.rcp_tech_company);
+             SetScrFont(FONT20, RED);
+             ret = Input(4, 6, buff, 8, IME_CHINESE, BLACK, GREEN, FALSE, FALSE, TRUE);
+             if(ret != OK)
+             {
+                DebugOut("ret=[%d]\n", ret); 
+                break;
+             }     
+             if(strlen(buff) == 0){
+                 SetScrFont(FONT20, WHITE);
+                 TextOut(0,8, ALIGN_CENTER,"输入不能为空");
+                 Wait(1000);
+                 continue;
+             }
+
+             ClearClient();
+             TextOut(0, 1, ALIGN_LEFT, "输入内容如下:");
+             TextOut(0, 3, ALIGN_LEFT, buff);
+             strcpy(gRCP.rcp_tech_company,buff);
+
+             WaitKey(0);
+                if(WriteData("test-receipt.dat", &gRCP, sizeof(T_RECEIPT), 0) == FALSE)
+                {     
+                        Clear();                                                
+                        SetScrFont(FONT20, WHITE);
+                        TextOut(0, 3, ALIGN_CENTER, "保存文件出错"); 
+                        TextOut(0, 4, ALIGN_CENTER, "请稍后重试"); 
+                        FailBeep();
+                        WaitKey(2000);
+                        goto FAILED;
+                }     
+              
+                OkBeep();
+                Clear();
+                SetScrFont(FONT20, WHITE);
+                TextOut(2, 4, ALIGN_CENTER, "设置成功!");
+                WaitKey(2000);
+                break;
+              
+        }
+        break; 
+
+
+        case 7:
+        while(1)
+        {
+             Clear();
+             SetScrFont(FONT20, WHITE);
+             TextOut(0, 1, ALIGN_CENTER, "请输入小票上技术支持电话:");
+             SetScrFont(FONT12, WHITE);
+             TextOut(0, 5, ALIGN_CENTER, "最多输入12个数字和符号");
+             TextOut(0, 6, ALIGN_CENTER, "按F2键输入各种符号:+,-,:等");
+             TextOut(0, 7, ALIGN_CENTER, "0键切换大小写，多组拼音时，用*和#键来上下选择");
+             memset(buff, 0, sizeof(buff));
+             TextOut(4, 9, ALIGN_LEFT, "原小票技术支持电话:");
+             TextOut(24, 9, ALIGN_LEFT, gRCP.rcp_tech_number);
+             SetScrFont(FONT20, RED);
+             ret = Input(4, 6, buff, 12, IME_CHINESE, BLACK, GREEN, FALSE, FALSE, TRUE);
+             if(ret != OK)
+             {
+                DebugOut("ret=[%d]\n", ret); 
+                break;
+             }     
+             if(strlen(buff) == 0){
+                 SetScrFont(FONT20, WHITE);
+                 TextOut(0,8, ALIGN_CENTER,"输入不能为空");
+                 Wait(1000);
+                 continue;
+             }
+
+             ClearClient();
+             TextOut(0, 1, ALIGN_LEFT, "输入内容如下:");
+             TextOut(0, 3, ALIGN_LEFT, buff);
+             strcpy(gRCP.rcp_tech_number,buff);
 
              WaitKey(0);
                 if(WriteData("test-receipt.dat", &gRCP, sizeof(T_RECEIPT), 0) == FALSE)
