@@ -555,7 +555,8 @@ void SetCommParam()
 		//标题
 		//ShowBmpFile(0, 25, "pic/title.bmp");
 		//TextOutByPixel(95, 30, "盈润捷通");
-		TextOutByPixel(115, 30, "盈润捷通");
+		//TextOutByPixel(115, 30, "盈润捷通");
+		TextOutByPixel(115, 30, gRCP.rcp_tech_company);
 
         ShowBmpFile(30, 75, "pic/button.bmp");
         TextOutByPixel(45, 80, "0.关机");
